@@ -1,2 +1,2 @@
 from controller.interface import Controller
-from controller.dummy import DummyController
+from controller.nxbt import NxbtController

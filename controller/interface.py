@@ -28,13 +28,19 @@ class Controller(ABC):
         ZL = 'ZL'
 
     class Stick(Enum):
-        RIGHT_STICK = 'R_STICK'
-        LEFT_STICK = 'L_STICK'
+        R_STICK = 'R_STICK'
+        L_STICK = 'L_STICK'
 
     @abstractmethod
-    def press_buttons(self, buttons: Button, down: float = 0.1, up: float = 0.1):
+    def press_buttons(self, buttons: list[Button], down: float = 0.1, up: float = 0.1):
         raise NotImplementedError
 
     @abstractmethod
     def tilt_stick(self, stick: Stick, x: float, y: float, tilted: float = 0.1, released: float = 0.1):
+        raise NotImplementedError
+
+    @abstractmethod
+    # Macro format:
+    # https://github.com/Brikwerk/nxbt/blob/master/docs/Macros.md
+    def macro(self, macro: str):
         raise NotImplementedError

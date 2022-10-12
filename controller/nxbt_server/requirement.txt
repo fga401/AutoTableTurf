@@ -1,0 +1,5 @@
+flask==1.1.2
+dbus-python==1.2.16
+blessed==1.17.10
+pynput==1.7.1
+psutil==5.6.6
