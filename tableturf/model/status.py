@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Set
 
 from tableturf.model.card import Card
 from tableturf.model.grid import Grid
@@ -7,7 +7,7 @@ from tableturf.model.step import Step
 
 
 class Status:
-    def __init__(self, stage: Stage, hands: list[Card], my_sp: int, his_sp: int, my_deck: list[Card], his_deck: list[Card]):
+    def __init__(self, stage: Stage, hands: List[Card], my_sp: int, his_sp: int, my_deck: List[Card], his_deck: List[Card]):
         self.__stage = stage
         self.__hands = hands
         self.__my_sp = my_sp
@@ -19,7 +19,7 @@ class Status:
         neighborhoods = self.stage.my_neighborhoods
         sp_neighborhoods = self.stage.my_sp_neighborhoods
 
-        def possible_steps_without_special_attack(card: Card) -> set[Step]:
+        def possible_steps_without_special_attack(card: Card) -> Set[Step]:
             result = set()
             result.add(Step(card, None, None, Step.Action.Skip))
             for idx in neighborhoods:
@@ -38,7 +38,7 @@ class Status:
                         result.add(Step(card, rotate, pos, Step.Action.Place))
             return result
 
-        def possible_steps_with_special_attack(card: Card) -> set[Step]:
+        def possible_steps_with_special_attack(card: Card) -> Set[Step]:
             result = set()
             if card.sp_cost > self.__my_sp:
                 return result
@@ -69,7 +69,7 @@ class Status:
         return self.__stage
 
     @property
-    def hands(self) -> list[Card]:
+    def hands(self) -> List[Card]:
         return self.__hands
 
     @property
@@ -81,14 +81,14 @@ class Status:
         return self.__his_sp
 
     @property
-    def my_deck(self) -> list[Card]:
+    def my_deck(self) -> List[Card]:
         return self.__my_deck
 
     @property
-    def his_deck(self) -> list[Card]:
+    def his_deck(self) -> List[Card]:
         return self.__his_deck
 
-    def get_possible_steps(self, card_id: Union[int, None] = None) -> set[Step]:
+    def get_possible_steps(self, card_id: Union[int, None] = None) -> Set[Step]:
         if card_id is None:
             return self.__all_possible_steps
         return self.__all_possible_steps_by_card[card_id]

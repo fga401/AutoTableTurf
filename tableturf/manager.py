@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class TableTureManager:
         self.__closer = closer
         self.stats = Stats()
 
-    def run(self, my_deck_pos: int, my_deck: Union[list[Card], None] = None, his_deck: Union[list[Card], None] = None):
+    def run(self, my_deck_pos: int, my_deck: Union[List[Card], None] = None, his_deck: Union[List[Card], None] = None):
         # TODO: load my deck from screen
         start_time = datetime.now().timestamp()
         while True:
@@ -70,10 +70,10 @@ class TableTureManager:
             # keep playing
             self.__close(self.__closer.close(self.stats))
 
-    def __get_hands(self, screen: np.ndarray) -> list[Card]:
+    def __get_hands(self, screen: np.ndarray) -> List[Card]:
         pass
 
-    def __get_status(self, screen: np.ndarray, my_deck: Union[list[Card], None] = None, his_deck: Union[list[Card], None] = None) -> Status:
+    def __get_status(self, screen: np.ndarray, my_deck: Union[List[Card], None] = None, his_deck: Union[List[Card], None] = None) -> Status:
         # TODO: get hands
         # TODO: get stage
         # TODO: get SP
