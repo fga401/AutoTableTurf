@@ -25,7 +25,7 @@ Automate the Tableturf game for you.
 
 # TODO
 - [x] Virtual controller API
-- [ ] Screen capturing
+- [x] Screen capturing
 - [ ] Screen recognition & Game flow testing
 - [ ] AI
 - [ ] User-friendly interface
