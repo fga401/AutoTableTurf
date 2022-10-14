@@ -24,8 +24,12 @@ Automate the Tableturf game for you.
 > ```
 
 # TODO
-- [ ] Vitural controller API
+- [x] Virtual controller API
 - [ ] Screen capturing
 - [ ] Screen recognition & Game flow testing
 - [ ] AI
 - [ ] User-friendly interface
+
+# Credits
+Many thanks to all below repositories:
+- https://github.com/Brikwerk/nxbt for implementing a Python API.
