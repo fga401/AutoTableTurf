@@ -4,7 +4,7 @@ from typing import Union, List
 import numpy as np
 
 from controller import Controller
-from screen import ScreenCapturer
+from capture import Capture
 from tableturf.ai import AI
 from tableturf.model import Status, Card, Step
 
@@ -38,7 +38,7 @@ class TableTureManager:
                 return True
             return False
 
-    def __init__(self, screen_capturer: ScreenCapturer, controller: Controller, ai: AI, closer: Closer = Closer()):
+    def __init__(self, screen_capturer: Capture, controller: Controller, ai: AI, closer: Closer = Closer()):
         self.__screen_capturer = screen_capturer
         self.__controller = controller
         self.__ai = ai
@@ -46,7 +46,7 @@ class TableTureManager:
         self.stats = Stats()
 
     def run(self, my_deck_pos: int, my_deck: Union[List[Card], None] = None, his_deck: Union[List[Card], None] = None):
-        # TODO: load my deck from screen
+        # TODO: load my deck from capture
         start_time = datetime.now().timestamp()
         while True:
             self.__select_deck(my_deck_pos)

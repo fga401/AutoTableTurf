@@ -1,2 +1,0 @@
-from screen.interface import ScreenCapturer
-from screen.window_screen_capturer import WindowScreenCapturer
