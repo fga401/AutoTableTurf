@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from typing import List
+
 
 class Controller(ABC):
     class Button(Enum):
@@ -32,15 +34,15 @@ class Controller(ABC):
         L_STICK = 'L_STICK'
 
     @abstractmethod
-    def press_buttons(self, buttons: list[Button], down: float = 0.1, up: float = 0.1):
+    def press_buttons(self, buttons: List[Button], down: float = 0.1, up: float = 0.1, block=True) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def tilt_stick(self, stick: Stick, x: float, y: float, tilted: float = 0.1, released: float = 0.1):
+    def tilt_stick(self, stick: Stick, x: int, y: int, tilted: float = 0.1, released: float = 0.1, block=True) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     # Macro format:
     # https://github.com/Brikwerk/nxbt/blob/master/docs/Macros.md
-    def macro(self, macro: str):
+    def macro(self, macro: str, block=True) -> bool:
         raise NotImplementedError

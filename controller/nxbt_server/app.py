@@ -2,7 +2,7 @@ from flask import Flask, request
 import nxbt
 
 # Init NXBT
-nx = nxbt.Nxbt(debug=True)
+nx = nxbt.Nxbt(debug=False)
 controller_idx = -1
 
 
@@ -59,39 +59,45 @@ stick_map = {
 app = Flask(__name__)
 
 
-@app.route('/press_buttons')
+@app.route('/press_buttons', methods=['POST'])
 def press_buttons():
-    print('press_buttons')
     buttons = request.args.get('buttons', default=None, type=str)
     if buttons is None:
         return
-    buttons = buttons.split(',')
+    buttons = [button_map[b] for b in buttons.upper().split(',')]
     down = request.args.get('down', default=0.3, type=float)
     up = request.args.get('up', default=0.3, type=float)
     block = request.args.get('block', default=True, type=bool)
+    print('press_buttons', buttons, down, up, block)
     nx.press_buttons(controller_idx, buttons, down=down, up=up, block=block)
     return 'ok'
 
 
-@app.route('/tilt_stick')
+@app.route('/tilt_stick', methods=['POST'])
 def tilt_stick():
-    print('tilt_stick')
     stick = request.args.get('stick', default=None, type=str)
-    x = request.args.get('x', default=None, type=float)
-    y = request.args.get('y', default=None, type=float)
+    x = request.args.get('x', default=None, type=int)
+    y = request.args.get('y', default=None, type=int)
     if stick is None or x is None or y is None:
         return
+    stick = stick_map[stick.upper()]
     tilted = request.args.get('tilted', default=0.3, type=float)
     released = request.args.get('released', default=0.3, type=float)
     block = request.args.get('block', default=True, type=bool)
+    print('tilt_stick', stick, x, y, tilted, released, block)
     nx.tilt_stick(controller_idx, stick, x=x, y=y, tilted=tilted, released=released, block=block)
     return 'ok'
 
 
-@app.route('/macro')
+@app.route('/macro', methods=['POST'])
 def macro():
-    print('macro')
-    macro = request.get_data()
+    macro = str(request.get_data(), 'utf-8')
     block = request.args.get('block', default=True, type=bool)
+    print('macro', macro, block)
     nx.macro(controller_idx, macro, block=block)
+    return 'ok'
+
+
+@app.route('/')
+def health_check():
     return 'ok'
