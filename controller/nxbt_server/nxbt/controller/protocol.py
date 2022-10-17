@@ -1,5 +1,5 @@
-from enum import Enum
 import random
+from enum import Enum
 from time import perf_counter
 
 from .controller import ControllerTypes
@@ -7,7 +7,6 @@ from .utils import replace_subarray
 
 
 class SwitchResponses(Enum):
-
     NO_DATA = -1
     MALFORMED = -2
     TOO_SHORT = -3
@@ -25,7 +24,6 @@ class SwitchResponses(Enum):
 
 
 class ControllerProtocol():
-
     CONTROLLER_INFO = {
         ControllerTypes.JOYCON_L: {
             "id": 0x01,
@@ -575,7 +573,6 @@ class ControllerProtocol():
 
 
 class SwitchReportParser():
-
     SUBCOMMANDS = {
         0x02: SwitchResponses.REQUEST_DEVICE_INFO,
         0x08: SwitchResponses.SET_SHIPMENT,

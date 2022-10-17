@@ -1,16 +1,15 @@
+import multiprocessing
 import os
 import time
-import psutil
 from collections import deque
-import multiprocessing
 
+import psutil
 from blessed import Terminal
 
 from .nxbt import Nxbt, PRO_CONTROLLER
 
 
 class LoadingSpinner():
-
     SPINNER_CHARS = ['■ □ □ □', '□ ■ □ □', '□ □ ■ □', '□ □ □ ■', '□ □ □ ■', '□ □ ■ □', '□ ■ □ □', '■ □ □ □']  # noqa
 
     def __init__(self):
@@ -36,7 +35,6 @@ class LoadingSpinner():
 
 
 class ControllerTUI():
-
     CONTROLS = {
         "ZL": "◿□□□□",
         "L": "◿□□□□",
@@ -171,7 +169,6 @@ class ControllerTUI():
 
 
 class InputTUI():
-
     KEYMAP = {
         # Left Stick Mapping
         "w": {
@@ -347,7 +344,7 @@ class InputTUI():
                 # Loading Screen
                 while inp != chr(113):  # Checking for q press
                     # Check key at 15hz
-                    inp = term.inkey(timeout=1/30)
+                    inp = term.inkey(timeout=1 / 30)
                     new_state = self.nx.state[self.controller_index]["state"]
 
                     if new_state != state:
@@ -406,7 +403,7 @@ class InputTUI():
             if len(term._keyboard_buf) > 1:
                 term._keyboard_buf = deque([term._keyboard_buf.pop()])
 
-            inp = term.inkey(1/66)
+            inp = term.inkey(1 / 66)
 
             pressed_key = None
             if inp.is_sequence:
@@ -551,7 +548,7 @@ class InputTUI():
                 packet["R_STICK"]["Y_VALUE"] = rs_y_value
 
                 nxbt.set_controller_input(controller_index, packet)
-                time.sleep(1/120)
+                time.sleep(1 / 120)
 
         input_process = multiprocessing.Process(
             target=input_worker, args=(self.nx, self.controller_index, input_packet))
@@ -579,7 +576,7 @@ class InputTUI():
             else:
                 self.controller.render_controller()
             self.check_for_disconnect(term)
-            time.sleep(1/120)
+            time.sleep(1 / 120)
 
     def render_start_screen(self, term, loading_text):
 
@@ -629,7 +626,7 @@ class InputTUI():
                 raise ConnectionError(errors)
 
             while True:
-                inp = term.inkey(1/30)
+                inp = term.inkey(1 / 30)
                 if inp == chr(113):
                     exit(1)
                 elif self.nx.state[self.controller_index]["state"] == 'connected':

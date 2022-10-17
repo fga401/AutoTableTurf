@@ -1,4 +1,5 @@
 from flask import Flask, request
+
 import nxbt
 
 # Init NXBT

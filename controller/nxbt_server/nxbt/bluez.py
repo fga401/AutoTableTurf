@@ -1,14 +1,12 @@
-import subprocess
-import re
-import os
-import time
 import logging
-from shutil import which
+import os
 import random
+import subprocess
+import time
 from pathlib import Path
+from shutil import which
 
 import dbus
-
 
 SERVICE_NAME = "org.bluez"
 BLUEZ_OBJECT_PATH = "/org/bluez"
@@ -50,8 +48,8 @@ def find_object_path(bus, service_name, interface_name, object_name=None):
         # If the object name wasn't specified or it matches
         # the interface address or the path ending
         elif (not object_name or
-                object_name == managed_interface["Address"] or
-                path.endswith(object_name)):
+              object_name == managed_interface["Address"] or
+              path.endswith(object_name)):
             obj = bus.get_object(service_name, path)
             return dbus.Interface(obj, interface_name).object_path
 
@@ -181,7 +179,7 @@ def clean_sdp_records():
     result = _run_command(['sdptool', 'browse', 'local']).stdout.decode('utf-8')
     if result is None or len(result.split('\n\n')) < 1:
         return
-    
+
     # Record all service record handles
     exceptions = ["PnP Information"]
     service_rec_handles = []
@@ -199,7 +197,7 @@ def clean_sdp_records():
         for line in rec.split('\n'):
             if "Service RecHandle" in line:
                 service_rec_handles.append(line.split(" ")[2])
-    
+
     # Delete all found service records
     if len(service_rec_handles) > 0:
         for record_handle in service_rec_handles:
@@ -224,19 +222,20 @@ def _run_command(command):
     cmd_err = result.stderr.decode("utf-8").replace("\n", "")
     if cmd_err != "":
         raise Exception(cmd_err)
-    
+
     return result
 
 
 def get_random_controller_mac():
     """Generates a random Switch-compliant MAC address
     """
+
     def seg():
-        random_number = random.randint(0,255)
+        random_number = random.randint(0, 255)
         hex_number = str(hex(random_number))
         hex_number = hex_number[2:].upper()
         return str(hex_number)
-    
+
     return f"7C:BB:8A:{seg()}:{seg()}:{seg()}"
 
 
@@ -269,8 +268,8 @@ def replace_mac_addresses(adapter_paths, addresses):
         adapter_id = adapter_paths[i].split('/')[-1]
         mac = addresses[i].split(':')
         cmds = ['hcitool', '-i', adapter_id, 'cmd', '0x3f', '0x001',
-                f'0x{mac[5]}',f'0x{mac[4]}',f'0x{mac[3]}',f'0x{mac[2]}',
-                f'0x{mac[1]}',f'0x{mac[0]}']
+                f'0x{mac[5]}', f'0x{mac[4]}', f'0x{mac[3]}', f'0x{mac[2]}',
+                f'0x{mac[1]}', f'0x{mac[0]}']
         _run_command(cmds)
         _run_command(['hciconfig', adapter_id, 'reset'])
 
@@ -318,7 +317,7 @@ def find_devices_by_alias(alias, return_path=False, created_bus=None):
 
     # Close the dbus connection if we created one
     if created_bus is None:
-        bus.close()
+        bus.exit()
 
     if return_path:
         return addresses, matching_paths
@@ -366,7 +365,7 @@ def disconnect_devices_by_alias(alias, created_bus=None):
 
     # Close the dbus connection if we created one
     if created_bus is None:
-        bus.close()
+        bus.exit()
 
 
 class BlueZ():
@@ -442,8 +441,8 @@ class BlueZ():
         # Reverse MAC (element position-wise) for use with hcitool
         mac = mac.split(":")
         cmds = ['hcitool', '-i', self.device_id, 'cmd', '0x3f', '0x001',
-                f'0x{mac[5]}',f'0x{mac[4]}',f'0x{mac[3]}',f'0x{mac[2]}',
-                f'0x{mac[1]}',f'0x{mac[0]}']
+                f'0x{mac[5]}', f'0x{mac[4]}', f'0x{mac[3]}', f'0x{mac[2]}',
+                f'0x{mac[1]}', f'0x{mac[0]}']
         _run_command(cmds)
         _run_command(['hciconfig', self.device_id, 'reset'])
 
@@ -892,7 +891,7 @@ class BlueZ():
             return path
 
         return None
-    
+
     def find_connected_devices(self, alias_filter=False):
         """Finds the D-Bus path to a device that contains the
         specified address.

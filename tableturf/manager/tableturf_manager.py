@@ -3,43 +3,17 @@ from typing import Union, List
 
 import numpy as np
 
-from controller import Controller
 from capture import Capture
+from controller import Controller
 from tableturf.ai import AI
+from tableturf.manager.data import Stats, Result
+from tableturf.manager.exit_manager import ExitManager, DefaultExitManager
 from tableturf.model import Status, Card, Step
 
 
-class Stats:
-    def __init__(self):
-        self.win = 0
-        self.battle = 0
-        self.time = 0
-
-
-class Result:
-    def __init__(self, my_ink: int, his_ink: int):
-        self.my_ink = my_ink
-        self.his_ink = his_ink
-
-
-class TableTureManager:
-    class Closer:
-        def __init__(self, max_win: Union[int, None] = None, max_battle: Union[int, None] = None, max_time: Union[int, None] = None):
-            self.__max_win = max_win
-            self.__max_battle = max_battle
-            self.__max_time = max_time
-
-        def close(self, stats: Stats) -> bool:
-            if self.__max_win is not None and self.__max_win <= stats.win:
-                return True
-            if self.__max_battle is not None and self.__max_battle <= stats.battle:
-                return True
-            if self.__max_time is not None and self.__max_time <= stats.time:
-                return True
-            return False
-
-    def __init__(self, screen_capturer: Capture, controller: Controller, ai: AI, closer: Closer = Closer()):
-        self.__screen_capturer = screen_capturer
+class TableTurfManager:
+    def __init__(self, screen_capture: Capture, controller: Controller, ai: AI, closer: ExitManager = DefaultExitManager()):
+        self.__screen_capture = screen_capture
         self.__controller = controller
         self.__ai = ai
         self.__closer = closer
@@ -50,16 +24,16 @@ class TableTureManager:
         start_time = datetime.now().timestamp()
         while True:
             self.__select_deck(my_deck_pos)
-            screen = self.__screen_capturer.capture()
+            screen = self.__screen_capture.capture()
             status = self.__get_status(screen, my_deck, his_deck)
             redraw = self.__ai.redraw(status)
             self.__redraw(redraw)
             for round in range(15):
-                screen = self.__screen_capturer.capture()
+                screen = self.__screen_capture.capture()
                 status = self.__get_status(screen, my_deck, his_deck)
                 step = self.__ai.next_step(status)
                 self.__move(step)
-            screen = self.__screen_capturer.capture()
+            screen = self.__screen_capture.capture()
             result = self.__get_result(screen)
             # update stats
             if result.my_ink > result.his_ink:
@@ -68,7 +42,7 @@ class TableTureManager:
             self.stats.time = now - start_time
             self.stats.battle += 1
             # keep playing
-            self.__close(self.__closer.close(self.stats))
+            self.__close(self.__closer.exit(self.stats))
 
     def __get_hands(self, screen: np.ndarray) -> List[Card]:
         pass
@@ -85,7 +59,7 @@ class TableTureManager:
     def __select_deck(self, my_deck_pos: int):
         pass
 
-    def __redraw(self, redraw:bool):
+    def __redraw(self, redraw: bool):
         pass
 
     def __move(self, step: Step):

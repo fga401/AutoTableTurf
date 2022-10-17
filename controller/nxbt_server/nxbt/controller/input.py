@@ -1,6 +1,5 @@
-from time import perf_counter
 from json import dumps
-
+from time import perf_counter
 
 DIRECT_INPUT_IDLE_PACKET = {
     # Sticks
@@ -53,7 +52,6 @@ DIRECT_INPUT_IDLE_PACKET = {
 
 
 class InputParser():
-
     # Left Stick calibration values
     LEFT_STICK_CALIBRATION = {
         "center_x": 2159,
@@ -150,7 +148,7 @@ class InputParser():
     def set_controller_input(self, controller_input):
 
         self.controller_input = controller_input
-    
+
     def commands_queued(self):
         check = dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET)
         check = check or self.macro_buffer
@@ -198,7 +196,7 @@ class InputParser():
 
                 # Timing metadata extraction
                 timer_length = self.current_macro_commands[-1]
-                timer_length = timer_length[0:len(timer_length)-1]
+                timer_length = timer_length[0:len(timer_length) - 1]
                 self.macro_timer_length = float(timer_length)
                 self.macro_timer_start = perf_counter()
 
@@ -321,15 +319,15 @@ class InputParser():
                 loop_buffer = []
 
                 # Detect delimiter and record
-                if macro[i+1].startswith("\t"):
+                if macro[i + 1].startswith("\t"):
                     loop_delimiter = "\t"
-                elif macro[i+1].startswith("    "):
+                elif macro[i + 1].startswith("    "):
                     loop_delimiter = "    "
                 else:
                     loop_delimiter = "  "
 
                 # Gather looping commands
-                for j in range(i+1, len(macro)):
+                for j in range(i + 1, len(macro)):
                     loop_line = macro[j]
                     if loop_line.startswith(loop_delimiter):
                         # Replace the first instance of the delimiter
@@ -340,7 +338,7 @@ class InputParser():
                     else:
                         i = j - 1
                         break
-                    if j+1 >= len(macro):
+                    if j + 1 >= len(macro):
                         i = j
 
                 # Recursively gather other loops if present
@@ -373,7 +371,7 @@ class InputParser():
         # Analog stick byte placeholders
         stick_left = None
         stick_right = None
-        for i in range(0, len(macro_input)-1):
+        for i in range(0, len(macro_input) - 1):
             button = macro_input[i]
             # Upper Byte
             if button == "Y":
@@ -476,18 +474,18 @@ class InputParser():
         # Converting ratios to uint16 values
         if ratio_x < 0:
             data_x_converted = (
-                abs(ratio_x) * cal["min_x"] + cal["center_x"])
+                    abs(ratio_x) * cal["min_x"] + cal["center_x"])
         else:
             data_x_converted = (
-                abs(ratio_x) * cal["max_x"] + cal["center_x"])
+                    abs(ratio_x) * cal["max_x"] + cal["center_x"])
         data_x_converted = int(round(data_x_converted))
 
         if ratio_y < 0:
             data_y_converted = (
-                abs(ratio_y) * cal["min_y"] + cal["center_y"])
+                    abs(ratio_y) * cal["min_y"] + cal["center_y"])
         else:
             data_y_converted = (
-                abs(ratio_y) * cal["max_y"] + cal["center_y"])
+                    abs(ratio_y) * cal["max_y"] + cal["center_y"])
         data_y_converted = int(round(data_y_converted))
 
         # Converting the two X/Y uint16 values to 3 uint8 Little Endian values

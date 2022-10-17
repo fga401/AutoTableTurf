@@ -1,19 +1,19 @@
-import socket
-import fcntl
-import os
-import time
-import queue
-import logging
-import traceback
 import atexit
-from threading import Thread
+import fcntl
+import logging
+import os
+import queue
+import socket
 import statistics as stat
+import time
+import traceback
+from threading import Thread
 
 from .controller import Controller, ControllerTypes
-from ..bluez import BlueZ, find_devices_by_alias
-from .protocol import ControllerProtocol
 from .input import InputParser
+from .protocol import ControllerProtocol
 from .utils import format_msg_controller, format_msg_switch
+from ..bluez import BlueZ
 
 
 class ControllerServer():
@@ -186,9 +186,9 @@ class ControllerServer():
             duration_end = time.perf_counter()
             duration_elapsed = duration_end - duration_start
             duration_start = duration_end
-            
+
             t += period
-            time.sleep(max(0,t-time.perf_counter()))
+            time.sleep(max(0, t - time.perf_counter()))
 
             self.tick += 1
 
@@ -199,8 +199,7 @@ class ControllerServer():
                 mean_time = stat.mean(self.times)
 
                 self.logger.debug(
-                    f"Tick: {self.tick}, Mean Time: {str(1/mean_time)}")
-
+                    f"Tick: {self.tick}, Mean Time: {str(1 / mean_time)}")
 
     def save_connection(self, error, state=None):
 
@@ -254,7 +253,7 @@ class ControllerServer():
                         if not received_first_message:
                             time.sleep(1)
                         else:
-                            time.sleep(1/15)
+                            time.sleep(1 / 15)
 
                     self.state["state"] = "connected"
                     return itr, ctrl
@@ -317,7 +316,7 @@ class ControllerServer():
                 # This action needs to be undertaken due to systemctl
                 # performing a delayed reset of the adapter when
                 # restarting the Bluetooth daemon.
-                time.sleep(0.75) # Wait for systemctl to disable all properties
+                time.sleep(0.75)  # Wait for systemctl to disable all properties
                 self.bt.set_powered(True)
                 self.bt.set_pairable(True)
                 self.bt.set_pairable_timeout(0)
@@ -328,7 +327,7 @@ class ControllerServer():
             # Keep track of Switches that connect
             if len(paths) > 0:
                 connected_devices = list(set(connected_devices + paths))
-            
+
             # Increment a counter if a Switch connected and disconnected
             disconnected = list(set(connected_devices) - set(paths))
             if len(disconnected) > 0:
@@ -338,7 +337,7 @@ class ControllerServer():
                     else:
                         connected_devices_count[path] += 1
                 connected_devices = list(set(connected_devices) - set(disconnected))
-            
+
             # Delete Switches that connect/disconnect twice.
             # This behaviour is characteristic of connection issues and is corrected
             # by removing the Switch's connection to the system.
@@ -396,7 +395,7 @@ class ControllerServer():
                 self.bt.set_class("0x02508")
 
                 self._crw_running = True
-                crw = Thread(target = self.connection_reset_watchdog)
+                crw = Thread(target=self.connection_reset_watchdog)
                 crw.start()
 
                 itr, itr_address = s_itr.accept()
@@ -450,8 +449,8 @@ class ControllerServer():
                     if not received_first_message:
                         time.sleep(1)
                     else:
-                        time.sleep(1/15)
-                
+                        time.sleep(1 / 15)
+
                 break
             except OSError as e:
                 self.logger.debug(e)

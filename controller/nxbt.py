@@ -1,6 +1,7 @@
 from typing import List
-import requests
 from urllib.parse import urljoin
+
+import requests
 
 from controller import Controller
 

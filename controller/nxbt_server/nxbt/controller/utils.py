@@ -48,9 +48,9 @@ def format_message(data, split, name):
             subcommand += "0x" + data_byte + " "
 
     formatted = (
-        f"--- {name} Msg ---\n" +
-        f"Payload:    {payload}\n" +
-        f"Subcommand: {subcommand}")
+            f"--- {name} Msg ---\n" +
+            f"Payload:    {payload}\n" +
+            f"Subcommand: {subcommand}")
 
     return formatted
 

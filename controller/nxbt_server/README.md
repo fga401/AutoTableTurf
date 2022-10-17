@@ -1,10 +1,12 @@
 # NXBT Server
 
-Simple HTTP server running on raspberry and invoking slim [NXBT](https://github.com/Brikwerk/nxbt) Python API to emulate a Nentendo Pro Controller.
+Simple HTTP server running on raspberry and invoking slim [NXBT](https://github.com/Brikwerk/nxbt) Python API to emulate
+a Nentendo Pro Controller.
 
 ## Getting Started
 
 Install requirements
+
 ```bash
 sudo pip3 install -r requirement.txt
 ```

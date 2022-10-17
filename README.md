@@ -1,6 +1,6 @@
 # AutoTableTurf
 
-[prototype] 
+[prototype]
 
 Automate the Tableturf game for you.
 
@@ -24,6 +24,7 @@ Automate the Tableturf game for you.
 > ```
 
 # TODO
+
 - [x] Virtual controller API
 - [x] Screen capturing
 - [ ] Screen recognition & Game flow testing
@@ -31,5 +32,7 @@ Automate the Tableturf game for you.
 - [ ] User-friendly interface
 
 # Credits
+
 Many thanks to all below repositories:
+
 - https://github.com/Brikwerk/nxbt for implementing a Python API.

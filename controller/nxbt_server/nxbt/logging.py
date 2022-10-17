@@ -3,7 +3,6 @@ from datetime import datetime
 
 
 def create_logger(debug=False, log_to_file=False, disable_logging=False):
-
     logger = logging.getLogger('nxbt1')
 
     if disable_logging:

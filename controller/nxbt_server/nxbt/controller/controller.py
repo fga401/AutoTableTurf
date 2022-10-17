@@ -1,6 +1,6 @@
-from enum import Enum
-import os
 import logging
+import os
+from enum import Enum
 
 import dbus
 
@@ -15,7 +15,6 @@ class ControllerTypes(Enum):
 
 
 class Controller():
-
     GAMEPAD_CLASS = "0x002508"
     SDP_UUID = "00001000-0000-1000-8000-00805f9b34fb"
     SDP_RECORD_PATH = "/nxbt1/controller"

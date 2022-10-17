@@ -1,28 +1,25 @@
-from multiprocessing import Process, Lock, Queue, Manager
-import queue
-from enum import Enum
 import atexit
-import signal
+import json
 import os
+import queue
+import signal
 import sys
 import time
-import json
+from enum import Enum
+from multiprocessing import Process, Lock, Queue, Manager
 
 import dbus
 
+from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
+from .bluez import find_devices_by_alias
+from .bluez import find_objects, toggle_clean_bluez
 from .controller import ControllerServer
 from .controller import ControllerTypes
-from .bluez import BlueZ, find_objects, toggle_clean_bluez
-from .bluez import replace_mac_addresses
-from .bluez import find_devices_by_alias
-from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
 from .logging import create_logger
-
 
 JOYCON_L = ControllerTypes.JOYCON_L
 JOYCON_R = ControllerTypes.JOYCON_R
 PRO_CONTROLLER = ControllerTypes.PRO_CONTROLLER
-
 
 DIRECT_INPUT_PACKET = {
     # Sticks
@@ -310,11 +307,11 @@ class Nxbt():
         if block:
             while True:
                 finished = (self.manager_state
-                            [controller_index]["finished_macros"])
+                [controller_index]["finished_macros"])
                 if macro_id in finished:
                     break
 
-                time.sleep(1/120)  # Wait one Pro Controller cycle
+                time.sleep(1 / 120)  # Wait one Pro Controller cycle
 
         return macro_id
 
@@ -429,11 +426,11 @@ class Nxbt():
         if block:
             while True:
                 finished = (self.manager_state
-                            [controller_index]["finished_macros"])
+                [controller_index]["finished_macros"])
                 if macro_id in finished:
                     break
 
-                time.sleep(1/120)
+                time.sleep(1 / 120)
 
     def clear_macros(self, controller_index):
         """Clears all running and queued macros on a specified
@@ -585,7 +582,7 @@ class Nxbt():
                                 state["state"] == "crashed"):
                             break
 
-                    time.sleep(1/30)
+                    time.sleep(1 / 30)
         finally:
             self._controller_lock.release()
 
@@ -647,7 +644,7 @@ class Nxbt():
 
         bus = dbus.SystemBus()
         adapters = find_objects(bus, SERVICE_NAME, ADAPTER_INTERFACE)
-        bus.close()
+        bus.exit()
 
         return adapters
 
@@ -704,7 +701,6 @@ class _ControllerManager():
     """
 
     def __init__(self, state, lock):
-
         self.state = state
         self.lock = lock
         self.controller_resources = Manager()
@@ -761,14 +757,13 @@ class _ControllerManager():
                                   task_queue=controller_queue,
                                   colour_body=colour_body,
                                   colour_buttons=colour_buttons,
-                                  frequency=frequency,)
+                                  frequency=frequency, )
         controller = Process(target=server.run, args=(reconnect_address,))
         controller.daemon = True
         self._children[index] = controller
         controller.start()
 
     def input_macro(self, index, macro, macro_id):
-
         self._controller_queues[index].put({
             "type": "macro",
             "macro": macro,
@@ -776,25 +771,21 @@ class _ControllerManager():
         })
 
     def stop_macro(self, index, macro_id):
-
         self._controller_queues[index].put({
             "type": "stop",
             "macro_id": macro_id,
         })
 
     def clear_macros(self, index):
-
         self._controller_queues[index].put({
             "type": "clear",
         })
 
     def remove_controller(self, index):
-        
         self._children[index].terminate()
         self.state.pop(index, None)
 
     def shutdown(self):
-
         # Loop over children and kill all
         for index in self._children.keys():
             child = self._children[index]

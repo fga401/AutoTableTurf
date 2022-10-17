@@ -1,5 +1,6 @@
-import requests
 import unittest
+
+import requests
 
 from controller import NxbtController, Controller
 
