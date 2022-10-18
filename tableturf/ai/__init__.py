@@ -1,2 +1,2 @@
-from .interface import AI
-from .simple import SimpleAI
+from tableturf.ai.interface import AI
+from tableturf.ai.simple import SimpleAI

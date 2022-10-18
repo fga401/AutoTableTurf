@@ -6,6 +6,11 @@ from capture.interface import Capture
 
 class VideoCapture(Capture):
     def __init__(self, device_idx):
+        """
+        Capture from the connected Camera.
+
+        :param device_idx: Camera index.
+        """
         self.__cam = cv2.VideoCapture(device_idx)
 
     @property
@@ -24,6 +29,10 @@ class VideoCapture(Capture):
         cv2.imshow(name, frame)
         cv2.waitKey()
         cv2.destroyAllWindows()
+
+    def save(self, name):
+        img = self.capture()
+        np.save(name, img)
 
     def capture(self) -> np.ndarray:
         ret, frame = self.__cam.read()
