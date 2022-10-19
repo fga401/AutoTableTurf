@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+from logger import logger
 from tableturf.manager.detection import util
 
 CURSOR_ROI_TOP_LEFT_X = 450
@@ -37,4 +38,5 @@ def get_deck_pos(img, debug=False) -> int:
             cv2.putText(mask, f'{ratios[i]:.3}', roi, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
         util.show(img)
         util.show(mask)
+    logger.debug(f'detection.deck_selection.get_deck_pos: return={pos}')
     return pos
