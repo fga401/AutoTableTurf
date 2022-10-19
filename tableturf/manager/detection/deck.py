@@ -17,7 +17,7 @@ CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 CURSOR_PIXEL_RATIO = 0.4
 
 
-def get_deck_pos(img, debug=False) -> int:
+def deck_cursor(img, debug=False) -> int:
     def __cursor_ratios(top_left: np.ndarray) -> float:
         roi = img[top_left[0]:top_left[0] + CURSOR_ROI_HEIGHT, top_left[1]:top_left[1] + CURSOR_ROI_WIDTH]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
@@ -38,5 +38,5 @@ def get_deck_pos(img, debug=False) -> int:
             cv2.putText(mask, f'{ratios[i]:.3}', roi, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
         util.show(img)
         util.show(mask)
-    logger.debug(f'detection.deck_selection.get_deck_pos: return={pos}')
+    logger.debug(f'detection.deck_cursor: return={pos}')
     return pos

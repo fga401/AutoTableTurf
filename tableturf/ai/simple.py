@@ -4,7 +4,7 @@ from tableturf.model import Status, Step
 
 class SimpleAI(AI):
     def redraw(self, status: Status) -> bool:
-        pass
+        return True
 
     def next_step(self, status: Status) -> Step:
         pass

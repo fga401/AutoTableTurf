@@ -26,6 +26,6 @@ class TestCard(unittest.TestCase):
     def test_save(self):
         cur = os.path.dirname(os.path.realpath(__file__))
         root = os.path.join(cur, os.pardir, os.pardir)
-        target = os.path.join(root, 'temp', 'deck', 'deck_selection_15_0')
+        target = os.path.join(root, 'temp', 'redraw', 'redraw_yes')
         print(target)
         self.capture.save(target)

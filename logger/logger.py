@@ -9,4 +9,3 @@ handler.setFormatter(formatter)
 logger = logging.getLogger('global')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
-

@@ -32,7 +32,7 @@ class VideoCapture(Capture):
 
     def save(self, name):
         img = self.capture()
-        np.save(name, img)
+        cv2.imwrite(name + '.jpg', img)
 
     def capture(self) -> np.ndarray:
         ret, frame = self.__cam.read()

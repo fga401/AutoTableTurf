@@ -1,2 +1,1 @@
-from tableturf.manager.exit_manager import ExitManager
-from tableturf.manager.tableturf_manager import TableTurfManager
+from tableturf.manager.tableturf import TableTurfManager, Exit

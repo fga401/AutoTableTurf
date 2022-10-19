@@ -3,8 +3,8 @@ from logger import logger
 from tableturf.manager.action import util
 
 
-def move_cursor(target: int, current: int):
-    logger.debug(f'action.deck_selection.move_cursor: target={target}, current={current}')
+def move_deck_cursor_marco(target: int, current: int):
+    logger.debug(f'action.move_deck_cursor_marco: target={target}, current={current}')
     current_x = current // 8
     current_y = current % 8
     target_x = target // 8
