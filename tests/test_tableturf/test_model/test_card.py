@@ -8,13 +8,16 @@ from tableturf.model import Card, Grid
 class TestCard(unittest.TestCase):
     def setUp(self) -> None:
         self.card = Card(
-            -1,
             np.array([
-                [Grid.MyInk.value, Grid.MyInk.value, Grid.MyInk.value],
-                [Grid.Empty.value, Grid.Empty.value, Grid.MySpecial.value],
+                [Grid.MyInk, Grid.MyInk, Grid.MyInk],
+                [Grid.Empty, Grid.Empty, Grid.MySpecial],
             ]),
             5
         )
+        self.non_ss_card = Card(np.array([
+            [Grid.MyInk, Grid.MyInk, Grid.MyInk],
+            [Grid.Empty, Grid.Empty, Grid.MyInk],
+        ]), 2)
 
     def test_card_grid(self):
         self.assertListEqual(self.card.get_grid(rotate=0).tolist(), [
@@ -78,4 +81,15 @@ class TestCard(unittest.TestCase):
             [-1, -1],
             [-1, 0],
             [0, 0],
+        ])
+
+    def test_non_special_space_card(self):
+        self.assertEqual(self.non_ss_card.size, 4)
+        self.assertEqual(self.non_ss_card.ss_id, None)
+        self.assertEqual(self.non_ss_card.sp_cost, 2)
+        self.assertListEqual(self.non_ss_card.get_offsets(0, rotate=0).tolist(), [
+            [0, 0],
+            [0, 1],
+            [0, 2],
+            [1, 2],
         ])

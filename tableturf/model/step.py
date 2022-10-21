@@ -38,12 +38,12 @@ class Step:
         return self.__action
 
     def __hash__(self):
-        return hash((self.card.id, self.__rotate, self.__action))
+        return hash((self.card, self.__rotate, self.__action))
 
     def __eq__(self, other):
         if isinstance(other, Step):
             if self.__pos is None:
-                return (self.card.id, self.__rotate, self.__action) == (other.card.id, other.__rotate, other.__action) and self.__pos == other.__pos
+                return (self.card, self.__rotate, self.__action) == (other.card, other.__rotate, other.__action) and self.__pos == other.__pos
             else:
-                return (self.card.id, self.__rotate, self.__action) == (other.card.id, other.__rotate, other.__action) and (self.__pos == other.__pos).all()
+                return (self.card, self.__rotate, self.__action) == (other.card, other.__rotate, other.__action) and (self.__pos == other.__pos).all()
         return NotImplemented

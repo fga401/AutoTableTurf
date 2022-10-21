@@ -21,7 +21,10 @@ class Stage:
 
         :param grid: Stage pattern.
         """
-        self.__grid = grid.copy()
+        if isinstance(grid[0][0], Grid):
+            self.__grid = np.vectorize(lambda x: x.value)(grid)
+        else:
+            self.__grid = grid.copy()
         self.__size = np.count_nonzero(self.grid != Grid.Wall.value)
 
         def neighborhoods(idx: np.ndarray) -> np.ndarray:
@@ -39,7 +42,7 @@ class Stage:
             return (self.__grid[valid_nbhd[:, 0], valid_nbhd[:, 1]] != Grid.Empty.value).all()
 
         def split_sp(sp: np.ndarray) -> tuple:
-            is_sp_fiery = np.apply_along_axis(is_fiery, axis=1, arr=sp)
+            is_sp_fiery = np.array([is_fiery(idx) for idx in sp])
             return sp[is_sp_fiery], sp[np.bitwise_not(is_sp_fiery)]
 
         def ink_neighborhoods(idx: np.ndarray) -> np.ndarray:
@@ -49,7 +52,7 @@ class Stage:
             return np.concatenate((valid_nbhd, invalid), axis=0)
 
         def collect_ink_neighborhoods(ink: np.ndarray) -> np.ndarray:
-            return within_grid(np.unique(np.apply_along_axis(ink_neighborhoods, axis=1, arr=ink).reshape(-1, 2), axis=0))
+            return within_grid(np.unique(np.array([ink_neighborhoods(idx) for idx in ink]).reshape(-1, 2), axis=0))
 
         def sp_neighborhoods(idx: np.ndarray) -> np.ndarray:
             nbhd = within_grid(Stage.__NEIGHBOURHOOD_OFFSETS + idx)
@@ -59,7 +62,7 @@ class Stage:
             return np.concatenate((valid_nbhd, invalid), axis=0)
 
         def collect_sp_neighborhoods(sp: np.ndarray) -> np.ndarray:
-            return within_grid(np.unique(np.apply_along_axis(sp_neighborhoods, axis=1, arr=sp).reshape(-1, 2), axis=0))
+            return within_grid(np.unique(np.array([sp_neighborhoods(idx) for idx in sp]).reshape(-1, 2), axis=0))
 
         self.__my_ink = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
         self.__my_sp = np.argwhere(self.__grid == Grid.MySpecial.value)

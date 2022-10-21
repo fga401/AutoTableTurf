@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from tableturf.model.grid import Grid
@@ -11,35 +13,27 @@ class Card:
     ])
     __INVERSE_ROTATION_MATRIX = np.linalg.inv(__ROTATION_MATRIX).astype(np.int)
 
-    def __init__(self, id_: int, grid: np.ndarray, sp_cost: int):
+    def __init__(self, grid: np.ndarray, sp_cost: int):
         """
         Represent a card. Each inked square is assigned an ID, which numbers first from left to right, then from up to down.
 
-        :param id_: Card ID
         :param grid: Card pattern.
         :param sp_cost: Special Points that a Special Attack costs.
         """
-        self.__id = id_
-        self.__grid = grid.copy()
+        if isinstance(grid[0][0], Grid):
+            self.__grid = np.vectorize(lambda x: x.value)(grid)
+        else:
+            self.__grid = grid.copy()
         self.__sp_cost = sp_cost
-
-        def diff(idx: np.ndarray) -> np.ndarray:
-            return indexes - idx
-
         ss_index = np.argwhere(self.__grid == Grid.MySpecial.value)
         indexes = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
-        self.__ss_id = np.argwhere((indexes == ss_index).all(axis=1))[0]
-        self.__offsets = np.apply_along_axis(diff, axis=1, arr=indexes)
+        self.__ss_id = None
+        if ss_index.size > 0:
+            self.__ss_id = np.argwhere((indexes == ss_index).all(axis=1))[0]
+        self.__offsets = np.array([indexes - idx for idx in indexes])
         self.__size, _ = indexes.shape
 
         self.__grid.setflags(write=False)
-
-    @property
-    def id(self) -> int:
-        """
-        Card id.
-        """
-        return self.__id
 
     @property
     def size(self) -> int:
@@ -56,7 +50,7 @@ class Card:
         return self.__sp_cost
 
     @property
-    def ss_id(self) -> int:
+    def ss_id(self) -> Union[int, None]:
         """
         Special Space id.
         """
@@ -79,13 +73,19 @@ class Card:
         """
         # return np.matmul(np.linalg.matrix_power(_ROTATION_MATRIX, rotate), self.__offsets[origin_id].T).T
         if origin is None:
-            origin = self.__ss_id
+            if self.__ss_id is None:
+                origin = 0
+            else:
+                origin = self.__ss_id
         return np.matmul(self.__offsets[origin], np.linalg.matrix_power(Card.__INVERSE_ROTATION_MATRIX, rotate))
 
     def __hash__(self):
-        return hash(self.__id)
+        return hash(str(self.__offsets[0]))
 
     def __eq__(self, other):
         if isinstance(other, Card):
-            return self.__id == other.__id
+            return (self.__offsets[0] == other.__offsets[0]).all()
         return NotImplemented
+
+    def __repr__(self):
+        return '\ngrid:\n' + str(self.__grid) + '\ncost:' + str(self.__sp_cost) + '\n'
