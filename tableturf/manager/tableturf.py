@@ -72,11 +72,6 @@ class TableTurfManager:
         self.stats = Stats()
 
     def run(self, deck: int, his_deck: Union[List[Card], None] = None):
-        # test begin
-        while True:
-            img = self.__capture()
-            detection.hands(img, debug=True)
-        # test end
         start_time = datetime.now().timestamp()
         while True:
             self.__select_deck(deck)
