@@ -17,7 +17,7 @@ def opencv_to_numpy(idx: np.ndarray) -> np.ndarray:
 
 
 def grid_roi_top_lefts(top_left, width, height, width_step, height_step, width_offset, height_offset):
-    return np.array([(top_left[0] + int(height_step * h) + int(height_offset * w), top_left[1] + int(width_step * w) + int(width_offset * h)) for h in range(height) for w in range(width)]).reshape((height, width, 2))
+    return np.array([(top_left[0] + np.round(height_step * h) + np.round(height_offset * w), top_left[1] + np.round(width_step * w) + np.round(width_offset * h)) for h in range(height) for w in range(width)]).astype(int).reshape((height, width, 2))
 
 
 def detect_cursor(img, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug=True):
@@ -41,7 +41,7 @@ def detect_cursor(img, top_lefts, width, height, hsv_lower_bound, hsv_upper_boun
             cv2.rectangle(mask, roi, roi + (width, height), (0, 255, 0), 1)
             font_size = np.min((width, height)) / 40
             cv2.putText(mask, f'{ratios[i]:.3}', roi + (0, -5), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 255), 1)
-            cv2.putText(mask, f'{i}', roi + np.array((width / 10, height / 1.3), dtype=int), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 255, 0), 1)
+            cv2.putText(mask, f'{i}', roi + np.rint([width / 10, height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 255, 0), 1)
         show(img)
         show(mask)
     return pos

@@ -119,18 +119,18 @@ def hands(img, cursor=None, debug=False) -> List[Card]:
             for k, roi in enumerate(grid):
                 cv2.rectangle(img, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
-                cv2.putText(mask, f'{k}', roi + np.array((HANDS_GRID_ROI_WIDTH / 5, HANDS_GRID_ROI_HEIGHT / 1.5), dtype=int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
+                cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
                 if grid_ink_ratios[i][k] > GRID_PIXEL_RATIO:
                     cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 0, 255), 1)
-                    cv2.putText(mask, f'{k}', roi + np.array((HANDS_GRID_ROI_WIDTH / 5, HANDS_GRID_ROI_HEIGHT / 1.5), dtype=int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
+                    cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
                 if grid_special_ratios[i][k] > GRID_PIXEL_RATIO:
                     cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (255, 0, 0), 1)
-                    cv2.putText(mask, f'{k}', roi + np.array((HANDS_GRID_ROI_WIDTH / 5, HANDS_GRID_ROI_HEIGHT / 1.5), dtype=int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
+                    cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
         for i, cost in enumerate(cost_rois):
             for k, roi in enumerate(cost):
                 cv2.rectangle(img, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
-            cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.array((-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT), dtype=int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
+            cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.rint([-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
         util.show(img)
         util.show(mask)
     cards = [Card(grids[i], costs[i]) for i in range(4)]
