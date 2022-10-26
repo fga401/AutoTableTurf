@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 
 from tableturf.manager.detection import util
+from tableturf.manager.detection.ui import special_on
+from tableturf.model import Stage, Pattern
 
 BOUNDING_BOX_TOP_LEFT = np.array([0, 750])
 BOUNDING_BOX_WIDTH = 800
@@ -28,7 +30,7 @@ def kmeans(data: np.ndarray, k=3, normalize=False, limit=500):
     for i in range(limit):
         classifications = np.argmin(((data[..., np.newaxis] - centers.T[np.newaxis, ...]) ** 2).sum(axis=1), axis=1)
         new_centers = np.array([data[classifications == j].mean(axis=0) for j in range(k)])
-        if (new_centers == centers).all():
+        if np.all(new_centers == centers):
             break
         else:
             centers = new_centers
@@ -48,7 +50,7 @@ def _classify_connected_components(stats):
     stats = stats[:, 2:5]
     upper_bound = np.array([CC_WIDTH_UPPER_BOUND, CC_HEIGHT_UPPER_BOUND, CC_AREA_UPPER_BOUND])[np.newaxis, ...]
     lower_bound = np.array([CC_WIDTH_LOWER_BOUND, CC_HEIGHT_LOWER_BOUND, CC_AREA_LOWER_BOUND])[np.newaxis, ...]
-    return np.bitwise_and((stats > lower_bound).all(axis=1), (stats < upper_bound).all(axis=1))
+    return np.bitwise_and(np.all(stats > lower_bound, axis=1), np.all(stats < upper_bound, axis=1))
 
 
 def cartesian_product(*arrays):
@@ -96,15 +98,15 @@ def _spawn_axis(x, xp, fp, threshold=3):
     greater_than_right = x > np.max(xp)
     between_left_and_right = np.bitwise_and(np.bitwise_not(less_than_left), np.bitwise_not(greater_than_right))
     # left extrapolation
-    if less_than_left.any():
+    if np.any(less_than_left):
         left = np.poly1d(np.polyfit(xp[:threshold], fp[:threshold], 1))
         result[less_than_left] = left(x[less_than_left])
     # right extrapolation
-    if greater_than_right.any():
+    if np.any(greater_than_right):
         right = np.poly1d(np.polyfit(xp[-threshold:], fp[-threshold:], 1))
         result[greater_than_right] = right(x[greater_than_right])
     # interpolation
-    if between_left_and_right.any():
+    if np.any(between_left_and_right):
         result[between_left_and_right] = np.interp(x[between_left_and_right], xp, fp)
     return result
 
@@ -140,14 +142,14 @@ def _spawn_roi_centers(centers, width_step, height_step):
     grid[indices[:, 0], indices[:, 1]] = centers[:, np.newaxis, :]
 
     for i in range(ly, ny - ry):
-        existed = (grid[i, :] != 0).all(axis=(1, 2))
+        existed = np.all(grid[i, :] != 0, axis=(1, 2))
         points = np.argwhere(existed).reshape(-1)
         values = grid[i, points].mean(axis=1)
         new_points = np.argwhere(np.bitwise_not(existed)).reshape(-1)
         grid[i, new_points, 1, 0] = _spawn_axis(new_points, points, values[:, 0])
         grid[i, new_points, 1, 1] = _spawn_axis(new_points, points, values[:, 1])
     for j in range(lx, nx - rx):
-        existed = (grid[:, j] != 0).all(axis=(1, 2))
+        existed = np.all(grid[:, j] != 0, axis=(1, 2))
         points = np.argwhere(existed).reshape(-1)
         values = grid[points, j].mean(axis=1)
         new_points = np.argwhere(np.bitwise_not(existed)).reshape(-1)
@@ -155,23 +157,23 @@ def _spawn_roi_centers(centers, width_step, height_step):
         grid[new_points, j, 0, 1] = _spawn_axis(new_points, points, values[:, 1])
 
     # fill missing values
-    hidx = (grid[:, :, 0] == 0).all(axis=2)
-    vidx = (grid[:, :, 1] == 0).all(axis=2)
-    if hidx.any():
+    hidx = np.all(grid[:, :, 0] == 0, axis=2)
+    vidx = np.all(grid[:, :, 1] == 0, axis=2)
+    if np.any(hidx):
         grid[np.stack([hidx, np.zeros_like(hidx)], axis=-1)] = grid[np.stack([np.zeros_like(hidx), hidx], axis=-1)]
-    if vidx.any():
+    if np.any(vidx):
         grid[np.stack([np.zeros_like(hidx), vidx], axis=-1)] = grid[np.stack([vidx, np.zeros_like(hidx)], axis=-1)]
 
     idx = np.bitwise_and(hidx, vidx)
-    for i in np.argwhere(idx.any(axis=1)).reshape(-1):
-        existed = (grid[i, :] != 0).all(axis=(1, 2))
+    for i in np.argwhere(np.any(idx, axis=1)).reshape(-1):
+        existed = np.all(grid[i, :] != 0, axis=(1, 2))
         points = np.argwhere(existed).reshape(-1)
         values = grid[i, points].mean(axis=1)
         new_points = np.argwhere(np.bitwise_not(existed)).reshape(-1)
         grid[i, new_points, 1, 0] = _spawn_axis(new_points, points, values[:, 0])
         grid[i, new_points, 1, 1] = _spawn_axis(new_points, points, values[:, 1])
-    for j in np.argwhere(idx.any(axis=0)).reshape(-1):
-        existed = (grid[:, j] != 0).all(axis=(1, 2))
+    for j in np.argwhere(np.any(idx, axis=0)).reshape(-1):
+        existed = np.all(grid[:, j] != 0, axis=(1, 2))
         points = np.argwhere(existed).reshape(-1)
         values = grid[points, j].mean(axis=1)
         new_points = np.argwhere(np.bitwise_not(existed)).reshape(-1)
@@ -199,8 +201,8 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     roi_width, roi_height = np.round([roi_width_step, roi_height_step]).astype(int) - ROI_EROSION_SIZE
     rois = roi_centers - np.rint([roi_width / 2, roi_height / 2])[np.newaxis, ...].astype(int)
     # trim rois
-    row_mask = np.bitwise_and((rois[:, :, 0] >= 0).all(axis=1), (rois[:, :, 0] + roi_height < BOUNDING_BOX_TOP_LEFT[0] + BOUNDING_BOX_HEIGHT).all(axis=1))
-    col_mask = np.bitwise_and((rois[:, :, 1] >= 0).all(axis=0), (rois[:, :, 1] + roi_width < BOUNDING_BOX_TOP_LEFT[1] + BOUNDING_BOX_WIDTH).all(axis=0))
+    row_mask = np.bitwise_and(np.all(rois[:, :, 0] >= 0, axis=1), np.all(rois[:, :, 0] + roi_height < BOUNDING_BOX_TOP_LEFT[0] + BOUNDING_BOX_HEIGHT, axis=1))
+    col_mask = np.bitwise_and(np.all(rois[:, :, 1] >= 0, axis=0), np.all(rois[:, :, 1] + roi_width < BOUNDING_BOX_TOP_LEFT[1] + BOUNDING_BOX_WIDTH, axis=0))
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
     print(roi_width, roi_height)
@@ -223,9 +225,14 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
         util.show(img_mask)
 
 
-def stage(img, rois, debug=False):
+def stage(img: np.ndarray, rois: np.ndarray, debug=False) -> (Stage, Pattern):
     """
     :param rois: (h, w, 2), rois[i][j] = (y, x)
-    :return: two numpy array, both shape are (h, w). The first one represents spaces on the stage, the second one represents card preview on the stage, which is useful when moving a card
+    :return: stage and pattern preview
     """
-    pass
+    sp_on = special_on(img, debug)
+    h, w, _ = rois.shape
+    stage = np.zeros((h, w))
+    preview = np.zeros((h, w))
+    # TODO
+    return Stage(stage), Pattern(preview)

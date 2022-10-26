@@ -1,8 +1,57 @@
-from typing import Union
-
 import numpy as np
 
 from tableturf.model.grid import Grid
+
+
+class Pattern:
+    def __init__(self, grid: np.ndarray):
+        """
+        :param grid: Pattern.
+        """
+        if isinstance(grid[0][0], Grid):
+            grid = np.vectorize(lambda x: x.value)(grid)
+        indexes = np.argwhere((grid == Grid.MyInk.value) | (grid == Grid.MySpecial.value))
+        self.__squares = grid[indexes[:, 0], indexes[:, 1]]
+        self.__offsets = indexes - indexes[0][np.newaxis, ...]
+        self.__size, _ = indexes.shape
+
+    @property
+    def size(self) -> int:
+        """
+        The number of squares the pattern covers.
+        """
+        return self.__size
+
+    @property
+    def offset(self) -> np.ndarray:
+        """
+        All square offsets of the pattern. The top-left square is the origin point.
+        """
+        return self.__offsets
+
+    @property
+    def squares(self) -> np.ndarray:
+        """
+        All squares from left to right, then from up to down.
+        """
+        return self.__squares
+
+    def __hash__(self):
+        return hash(str(self.__offsets))
+
+    def __eq__(self, other):
+        if isinstance(other, Pattern):
+            return np.all(self.__offsets == other.__offsets) and np.all(self.__squares == other.__squares)
+        return NotImplemented
+
+    def __repr__(self):
+        h, w = np.max(self.__offsets, axis=1) + (1, 1)
+        grid = np.zeros((h, w))
+        grid[self.__offsets[:, 0], self.__offsets[:, 1]] = self.__squares
+        return str(grid)
+
+    def __str__(self):
+        return repr(self)
 
 
 class Card:
@@ -20,20 +69,9 @@ class Card:
         :param grid: Card pattern.
         :param sp_cost: Special Points that a Special Attack costs.
         """
-        if isinstance(grid[0][0], Grid):
-            self.__grid = np.vectorize(lambda x: x.value)(grid)
-        else:
-            self.__grid = grid.copy()
         self.__sp_cost = sp_cost
-        ss_index = np.argwhere(self.__grid == Grid.MySpecial.value)
-        indexes = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
-        self.__ss_id = None
-        if ss_index.size > 0:
-            self.__ss_id = np.argwhere((indexes == ss_index).all(axis=1))[0]
-        self.__offsets = np.array([indexes - idx for idx in indexes])
-        self.__size, _ = indexes.shape
-
-        self.__grid.setflags(write=False)
+        self.__patterns = [Pattern(np.rot90(grid, i)) for i in range(4)]
+        self.__size = self.__patterns[0].size
 
     @property
     def size(self) -> int:
@@ -49,43 +87,24 @@ class Card:
         """
         return self.__sp_cost
 
-    @property
-    def ss_id(self) -> Union[int, None]:
-        """
-        Special Space id.
-        """
-        return self.__ss_id
-
-    def get_grid(self, rotate: int = 0) -> np.ndarray:
+    def get_pattern(self, rotate: int = 0) -> Pattern:
         """
         Get the pattern of the card.
 
         :param rotate: The times of rotation (counterclockwise 90°)
         """
-        return np.rot90(self.__grid, rotate)
-
-    def get_offsets(self, origin: int = None, rotate: int = 0) -> np.ndarray:
-        """
-        Given an origin, return all square offsets of the pattern
-
-        :param origin: The ID of the origin.
-        :param rotate: The times of rotation (counterclockwise 90°)
-        """
-        # return np.matmul(np.linalg.matrix_power(_ROTATION_MATRIX, rotate), self.__offsets[origin_id].T).T
-        if origin is None:
-            if self.__ss_id is None:
-                origin = 0
-            else:
-                origin = self.__ss_id
-        return np.matmul(self.__offsets[origin], np.linalg.matrix_power(Card.__INVERSE_ROTATION_MATRIX, rotate))
+        return self.__patterns[rotate % 4]
 
     def __hash__(self):
-        return hash(str(self.__offsets[0]))
+        return hash(self.__patterns[0])
 
     def __eq__(self, other):
         if isinstance(other, Card):
-            return (self.__offsets[0] == other.__offsets[0]).all()
+            return np.all(self.__patterns[0] == other.__patterns[0])
         return NotImplemented
 
     def __repr__(self):
-        return '\ngrid:\n' + str(self.__grid) + '\ncost:' + str(self.__sp_cost) + '\n'
+        return f'Card(pattern={self.__patterns[0]}, sp_cost={self.__sp_cost})'
+
+    def __str__(self):
+        return repr(self)

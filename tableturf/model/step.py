@@ -12,9 +12,12 @@ class Step:
         SpecialAttack = 1
         Skip = 2
 
-    def __init__(self, card: Card, rotate: Union[int, None], pos: Union[np.ndarray, None], action: Action):
+    def __init__(self, action: Action, card: Card, rotate: Union[int, None], pos: Union[np.ndarray, None]):
+        """
+        :param pos: (x, y)
+        """
         self.__card = card
-        self.__rotate = rotate
+        self.__rotate = rotate if rotate is not None else None
         self.__pos = pos.copy() if pos is not None else None
         self.__action = action
 
@@ -38,12 +41,17 @@ class Step:
         return self.__action
 
     def __hash__(self):
-        return hash((self.card, self.__rotate, self.__action))
+        return hash((self.card, self.__action))
 
     def __eq__(self, other):
         if isinstance(other, Step):
-            if self.__pos is None:
-                return (self.card, self.__rotate, self.__action) == (other.card, other.__rotate, other.__action) and self.__pos == other.__pos
-            else:
-                return (self.card, self.__rotate, self.__action) == (other.card, other.__rotate, other.__action) and (self.__pos == other.__pos).all()
+            self_rotate = 0 if self.__rotate is None else self.__rotate
+            other_rotate = 0 if other.__rotate is None else other.__rotate
+            return (self.card.get_pattern(self_rotate), self.__action) == (other.card.get_pattern(other_rotate), other.__action) and np.all(self.__pos == other.__pos)
         return NotImplemented
+
+    def __repr__(self):
+        return f'Step(action={self.__action}, card={self.__card}, rotate={self.__rotate}, pos={self.__pos})'
+
+    def __str__(self):
+        return repr(self)

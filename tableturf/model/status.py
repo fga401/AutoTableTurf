@@ -1,5 +1,7 @@
 from typing import Union, List, Set
 
+import numpy as np
+
 from tableturf.model.card import Card
 from tableturf.model.grid import Grid
 from tableturf.model.stage import Stage
@@ -21,21 +23,20 @@ class Status:
 
         def possible_steps_without_special_attack(card: Card) -> Set[Step]:
             result = set()
-            result.add(Step(card, None, None, Step.Action.Skip))
+            result.add(Step(Step.Action.Skip, card, None, None))
             for idx in neighborhoods:
                 for origin in range(card.size):
                     for rotate in range(4):
-                        pattern_indexes = card.get_offsets(origin, rotate) + idx
+                        pattern_indexes = card.get_pattern(rotate).offset + idx
                         # pattern is out of boundary
                         xs = pattern_indexes[:, 0]
                         ys = pattern_indexes[:, 1]
-                        if not ((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)).all():
+                        if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
                             continue
                         # squares are not empty
-                        if not (self.stage.grid[xs, ys] == Grid.Empty.value).all():
+                        if not np.all(self.stage.grid[xs, ys] == Grid.Empty.value):
                             continue
-                        pos = pattern_indexes[card.ss_id]
-                        result.add(Step(card, rotate, pos, Step.Action.Place))
+                        result.add(Step(Step.Action.Place, card, rotate, idx))
             return result
 
         def possible_steps_with_special_attack(card: Card) -> Set[Step]:
@@ -45,18 +46,17 @@ class Status:
             for idx in sp_neighborhoods:
                 for origin in range(card.size):
                     for rotate in range(4):
-                        pattern_indexes = card.get_offsets(origin, rotate) + idx
+                        pattern_indexes = card.get_pattern(rotate).offset + idx
                         xs = pattern_indexes[:, 0]
                         ys = pattern_indexes[:, 1]
                         # pattern is out of boundary
-                        if not ((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)).all():
+                        if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
                             continue
                         # squares are not empty
                         values = self.stage.grid[xs, ys]
-                        if not ((values == Grid.Empty.value) | (values == Grid.MyInk.value) | (values == Grid.HisInk.value)).all():
+                        if not np.all((values == Grid.Empty.value) | (values == Grid.MyInk.value) | (values == Grid.HisInk.value)):
                             continue
-                        pos = pattern_indexes[card.ss_id]
-                        result.add(Step(card, rotate, pos, Step.Action.SpecialAttack))
+                        result.add(Step(Step.Action.SpecialAttack, card, rotate, idx))
             return result
 
         self.__all_possible_steps_by_card = {
@@ -92,3 +92,9 @@ class Status:
         if card is None:
             return self.__all_possible_steps
         return self.__all_possible_steps_by_card[card]
+
+    def __repr__(self):
+        return f'Stage(stage={self.__stage}, hands={self.__hands}, my_sp={self.__my_sp}, his_sp={self.__his_sp}, my_deck={self.__my_deck}, his_deck={self.__his_deck})'
+
+    def __str__(self):
+        return repr(self)

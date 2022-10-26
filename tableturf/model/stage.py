@@ -39,7 +39,7 @@ class Stage:
         def is_fiery(idx: np.ndarray) -> bool:
             nbhd = neighborhoods(idx)
             valid_nbhd = within_grid(nbhd)
-            return (self.__grid[valid_nbhd[:, 0], valid_nbhd[:, 1]] != Grid.Empty.value).all()
+            return np.all(self.__grid[valid_nbhd[:, 0], valid_nbhd[:, 1]] != Grid.Empty.value)
 
         def split_sp(sp: np.ndarray) -> tuple:
             is_sp_fiery = np.array([is_fiery(idx) for idx in sp])
@@ -91,7 +91,7 @@ class Stage:
     @property
     def grid(self) -> np.ndarray:
         """
-        Pattern of the Stage.
+        Pattern of the Stage. (h w)
         """
         return self.__grid
 
@@ -112,83 +112,89 @@ class Stage:
     @property
     def my_sp(self) -> np.ndarray:
         """
-        Indexes of my Special Space on the stage.
+        Indexes of my Special Space on the stage. shape = (N, 2)
         """
         return self.__my_sp
 
     @property
     def my_ink(self) -> np.ndarray:
         """
-        Indexes of my ink on the stage.
+        Indexes of my ink on the stage. shape = (N, 2)
         """
         return self.__my_ink
 
     @property
     def my_fiery_sp(self) -> np.ndarray:
         """
-        Indexes of my fiery Special Space on the stage.
+        Indexes of my fiery Special Space on the stage. shape = (N, 2)
         """
         return self.__my_fiery_sp
 
     @property
     def my_unfiery_sp(self) -> np.ndarray:
         """
-        Indexes of my un-fiery Special Space on the stage.
+        Indexes of my un-fiery Special Space on the stage. shape = (N, 2)
         """
         return self.__my_unfiery_sp
 
     @property
     def my_neighborhoods(self) -> np.ndarray:
         """
-        Indexes of the empty squares nearby my ink on the stage.
+        Indexes of the empty squares nearby my ink on the stage. shape = (N, 2)
         """
         return self.__my_neighborhoods
 
     @property
     def my_sp_neighborhoods(self) -> np.ndarray:
         """
-        Indexes of the squares nearby my Special Space on the stage. The squares are Empty, MyInk or HisInk.
+        Indexes of the squares nearby my Special Space on the stage. The squares are Empty, MyInk or HisInk. shape = (N, 2)
         """
         return self.__my_sp_neighborhoods
 
     @property
     def his_sp(self) -> np.ndarray:
         """
-        Indexes of opponent's Special Space on the stage.
+        Indexes of opponent's Special Space on the stage. shape = (N, 2)
         """
         return self.__his_sp
 
     @property
     def his_ink(self) -> np.ndarray:
         """
-        Indexes of opponent's ink on the stage.
+        Indexes of opponent's ink on the stage. shape = (N, 2)
         """
         return self.__his_ink
 
     @property
     def his_fiery_sp(self) -> np.ndarray:
         """
-        Indexes of opponent's fiery Special Space on the stage.
+        Indexes of opponent's fiery Special Space on the stage. shape = (N, 2)
         """
         return self.__his_fiery_sp
 
     @property
     def his_unfiery_sp(self) -> np.ndarray:
         """
-        Indexes of opponent's un-fiery Special Space on the stage.
+        Indexes of opponent's un-fiery Special Space on the stage. shape = (N, 2)
         """
         return self.__his_unfiery_sp
 
     @property
     def his_neighborhoods(self) -> np.ndarray:
         """
-        Indexes of the empty squares nearby opponent's ink on the stage.
+        Indexes of the empty squares nearby opponent's ink on the stage. shape = (N, 2)
         """
         return self.__his_neighborhoods
 
     @property
     def his_sp_neighborhoods(self) -> np.ndarray:
         """
-        Indexes of the squares nearby opponent's Special Space on the stage. The squares are Empty, MyInk or HisInk.
+        Indexes of the squares nearby opponent's Special Space on the stage. The squares are Empty, MyInk or HisInk. shape = (N, 2)
         """
         return self.__his_sp_neighborhoods
+
+    def __repr__(self):
+        return f'Stage(grid={self.__grid})'
+
+    def __str__(self):
+        return repr(self)
