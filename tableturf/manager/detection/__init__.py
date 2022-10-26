@@ -1,4 +1,3 @@
-from tableturf.manager.detection.card import hands, hands_cursor
-from tableturf.manager.detection.deck import deck_cursor
-from tableturf.manager.detection.redraw import redraw_cursor
-from tableturf.manager.detection.stage import find_stage_rois
+from tableturf.manager.detection.card import hands
+from tableturf.manager.detection.stage import stage_rois
+from tableturf.manager.detection.ui import deck_cursor, hands_cursor, redraw_cursor, special_on

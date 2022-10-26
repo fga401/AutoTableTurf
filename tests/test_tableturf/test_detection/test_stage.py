@@ -13,14 +13,14 @@ class TestCard(unittest.TestCase):
     def test_find_stage_roi_1(self):
         capture = FileLoader(path=os.path.join(path, 'stage1'))
         for _ in range(10):
-            detection.find_stage_rois(capture.capture(), True)
+            detection.stage_rois(capture.capture(), True)
 
     def test_find_stage_roi_2(self):
         capture = FileLoader(path=os.path.join(path, 'stage2'))
         for _ in range(10):
-            detection.find_stage_rois(capture.capture(), True)
+            detection.stage_rois(capture.capture(), True)
 
     def test_find_stage_roi_3(self):
         capture = FileLoader(path=os.path.join(path, 'stage3'))
         for _ in range(10):
-            detection.find_stage_rois(capture.capture(), True)
+            detection.stage_rois(capture.capture(), True)

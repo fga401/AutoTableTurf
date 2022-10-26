@@ -5,30 +5,8 @@ import numpy as np
 
 from logger import logger
 from tableturf.manager.detection import util
+from tableturf.manager.detection.ui import hands_cursor
 from tableturf.model import Card, Grid
-
-HANDS_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[470, 14], [793, 14], [480, 266], [797, 266]])
-HANDS_CURSOR_ROI_WIDTH = 30
-HANDS_CURSOR_ROI_HEIGHT = 30
-HANDS_CURSOR_COLOR_HSV_UPPER_BOUND = (35, 255, 255)
-HANDS_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
-HANDS_CURSOR_PIXEL_RATIO = 0.3
-
-
-def hands_cursor(img: np.ndarray, debug=False) -> int:
-    pos = util.detect_cursor(
-        img,
-        HANDS_CURSOR_NUMPY_ROI_TOP_LEFTS,
-        HANDS_CURSOR_ROI_WIDTH,
-        HANDS_CURSOR_ROI_HEIGHT,
-        HANDS_CURSOR_COLOR_HSV_LOWER_BOUND,
-        HANDS_CURSOR_COLOR_HSV_UPPER_BOUND,
-        HANDS_CURSOR_PIXEL_RATIO,
-        debug,
-    )
-    logger.debug(f'detection.hands_cursor: return={pos}')
-    return pos
-
 
 # card grid
 HANDS_GRID_TOP_LEFTS = np.array([[192, 51], [516, 51], [203, 305], [516, 305]])

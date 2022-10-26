@@ -42,8 +42,8 @@ def kmeans(data: np.ndarray, k=3, normalize=False, limit=500):
 
 def _classify_connected_components(stats):
     """
-    :param stats: ndarray of (x, y, width, height, area). shape = (n, 5)
-    :return: ndarray of bool indicating target components. shape = (n,)
+    :param stats: ndarray of (x, y, width, height, area). shape = (N, 5)
+    :return: ndarray of bool indicating target components. shape = (N,)
     """
     stats = stats[:, 2:5]
     upper_bound = np.array([CC_WIDTH_UPPER_BOUND, CC_HEIGHT_UPPER_BOUND, CC_AREA_UPPER_BOUND])[np.newaxis, ...]
@@ -111,8 +111,8 @@ def _spawn_axis(x, xp, fp, threshold=3):
 
 def _spawn_roi_centers(centers, width_step, height_step):
     """
-    :param centers: N * (x, y)
-    :return: N * (x, y)
+    :param centers: (N, 2)
+    :return: (nx, ny, 2)
     """
     x = centers[:, 0]
     y = centers[:, 1]
@@ -177,27 +177,37 @@ def _spawn_roi_centers(centers, width_step, height_step):
         new_points = np.argwhere(np.bitwise_not(existed)).reshape(-1)
         grid[new_points, j, 0, 0] = _spawn_axis(new_points, points, values[:, 0])
         grid[new_points, j, 0, 1] = _spawn_axis(new_points, points, values[:, 1])
-    return np.rint(grid.mean(axis=2).reshape((-1, 2))).astype(int) + BOUNDING_BOX_TOP_LEFT
+
+    return np.rint(grid.mean(axis=2)).astype(int) + BOUNDING_BOX_TOP_LEFT
 
 
-def find_stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
+def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     """
     :return: top_lefts, roi_width, roi_height
     """
+    # find connected components
     bounding_box = img[BOUNDING_BOX_TOP_LEFT[0]: BOUNDING_BOX_TOP_LEFT[0] + BOUNDING_BOX_HEIGHT, BOUNDING_BOX_TOP_LEFT[1]:BOUNDING_BOX_TOP_LEFT[1] + BOUNDING_BOX_WIDTH]
     hsv = cv2.cvtColor(bounding_box, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, EMPTY_COLOR_HSV_LOWER_BOUND, EMPTY_COLOR_HSV_UPPER_BOUND)
     mask = cv2.erode(mask, kernel=None)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=4)
+    # list all rois from stats
     roi_index = _classify_connected_components(stats)
     square_width, square_height = stats[roi_index, 2:4].mean(axis=0)
     roi_width_step, roi_height_step = _get_steps(centroids[roi_index], square_width, square_height)
     roi_centers = _spawn_roi_centers(centroids[roi_index], roi_width_step, roi_height_step)
     roi_width, roi_height = np.round([roi_width_step, roi_height_step]).astype(int) - ROI_EROSION_SIZE
     rois = roi_centers - np.rint([roi_width / 2, roi_height / 2])[np.newaxis, ...].astype(int)
+    # trim rois
+    row_mask = np.bitwise_and((rois[:, :, 0] >= 0).all(axis=1), (rois[:, :, 0] + roi_height < BOUNDING_BOX_TOP_LEFT[0] + BOUNDING_BOX_HEIGHT).all(axis=1))
+    col_mask = np.bitwise_and((rois[:, :, 1] >= 0).all(axis=0), (rois[:, :, 1] + roi_width < BOUNDING_BOX_TOP_LEFT[1] + BOUNDING_BOX_WIDTH).all(axis=0))
+    roi_centers = roi_centers[row_mask][:, col_mask]
+    rois = rois[row_mask][:, col_mask]
     print(roi_width, roi_height)
     print(roi_width_step, roi_height_step)
     if debug:
+        rois = rois.reshape(-1, 2)
+        roi_centers = roi_centers.reshape(-1, 2)
         colorful_mask = cv2.merge((labels * 53 % 255, labels * 101 % 255, labels * 151 % 255))
         img_mask = np.zeros_like(img)
         for center in centroids[roi_index]:
@@ -211,3 +221,11 @@ def find_stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
             cv2.rectangle(img_mask, roi, roi + (roi_width, roi_height), (255, 255, 255), 1)
         util.show(img)
         util.show(img_mask)
+
+
+def stage(img, rois, debug=False):
+    """
+    :param rois: (h, w, 2), rois[i][j] = (y, x)
+    :return: two numpy array, both shape are (h, w). The first one represents spaces on the stage, the second one represents card preview on the stage, which is useful when moving a card
+    """
+    pass
