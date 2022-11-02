@@ -1,9 +1,6 @@
-from typing import Iterable
-
 import cv2
 import numpy as np
 
-from logger import logger
 from tableturf.manager.detection import util
 from tableturf.model import Stage, Pattern, Grid
 
@@ -173,7 +170,7 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     hsv = cv2.cvtColor(bounding_box, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, EMPTY_COLOR_HSV_LOWER_BOUND, EMPTY_COLOR_HSV_UPPER_BOUND)
     mask = cv2.erode(mask, kernel=None)
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=4)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask)
     # list all rois from stats
     roi_index = _classify_connected_components(stats)
     square_width, square_height = stats[roi_index, 2:4].mean(axis=0)
@@ -186,9 +183,17 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     col_mask = np.bitwise_and(np.all(rois[:, :, 1] >= 0, axis=0), np.all(rois[:, :, 1] + roi_width < BOUNDING_BOX_TOP_LEFT[1] + BOUNDING_BOX_WIDTH, axis=0))
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
-    print(roi_width, roi_height)
-    print(roi_width_step, roi_height_step)
-    # TODO: trim col/row that is wall
+
+    stage_grid = stage(img, rois, roi_width, roi_height, debug)[0].grid
+    not_wall = stage_grid != Grid.Wall.value
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(not_wall.astype(np.uint8) * 255)
+    target_cc = np.argmax(stats[1:, 4]) + 1
+    not_wall[labels != target_cc] = False
+    row_mask = np.any(not_wall, axis=1)
+    col_mask = np.any(not_wall, axis=0)
+    roi_centers = roi_centers[row_mask][:, col_mask]
+    rois = rois[row_mask][:, col_mask]
+
     if debug:
         rois = rois.reshape(-1, 2)
         roi_centers = roi_centers.reshape(-1, 2)
@@ -285,7 +290,7 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
         edge = cv2.Canny(__roi(top_left), 50, 100)
         edge = cv2.dilate(edge, kernel=np.ones((4, 4), dtype=np.uint8))
         edge = edge + 1  # inverse background and foreground
-        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=8)
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge)
         sub_roi = labels[roi_height // 5 * 2:roi_height // 5 * 3, roi_width // 2:roi_width // 5 * 3]
         if np.all(sub_roi == 0):
             target = 0
@@ -346,18 +351,21 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
             edge = edge + 1  # inverse background and foreground
             num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=8)
             color = DEBUG_COLOR[stage[k]]
+            if is_fiery[k]:
+                thickness = 2
+            else:
+                thickness = 1
             mask_edge[rois[k][0]:rois[k][0] + roi_height, rois[k][1]:rois[k][1] + roi_width] = (labels * 47 % 255)[..., np.newaxis]
-            cv2.rectangle(img_2, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.rectangle(img_2, left_top, left_top + (roi_width, roi_height), color, thickness)
             cv2.putText(img_2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-            cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, thickness)
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
         util.show(img_2)
         util.show(mask_edge)
         # util.show(mask_color)
 
     stage = Stage(stage.reshape((h, w)))
-    return stage, is_fiery
-
+    return stage, is_fiery.reshape((h, w))
 
 # # TODO
 # def preview(img: np.ndarray, stage: Stage, rois: np.ndarray, roi_width, roi_height, debug=False) -> (Stage, Pattern):
