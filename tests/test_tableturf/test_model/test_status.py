@@ -9,7 +9,7 @@ class TestStatus(unittest.TestCase):
     def setUp(self) -> None:
         self.stage = Stage(np.array([
             [Grid.Wall, Grid.Empty, Grid.HisSpecial],
-            [Grid.Gray, Grid.MySpecial, Grid.MyInk],
+            [Grid.Neutral, Grid.MySpecial, Grid.MyInk],
             [Grid.Empty, Grid.Empty, Grid.HisInk],
         ]))
         self.card_0 = Card(np.array([

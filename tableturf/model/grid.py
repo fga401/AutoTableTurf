@@ -7,5 +7,5 @@ class Grid(Enum):
     MySpecial = 2
     HisInk = -1
     HisSpecial = -2
-    Gray = -10
+    Neutral = -10
     Wall = -100

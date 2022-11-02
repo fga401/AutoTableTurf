@@ -1,9 +1,22 @@
 import cv2
 import numpy as np
 
+from logger import logger
 
-def show(img: np.ndarray):
+
+def show(img: np.ndarray, callback=None, override_callback=False):
+    def __print_debug_info(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            bgr = img[y:y + 1, x:x + 1]
+            hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+            logger.debug(f'detection.debug: x={x}, y={y}, BGR={bgr.squeeze()}, HSV={hsv.squeeze()}')
+        if callback is not None:
+            callback(event, x, y, flags, param)
+
     cv2.imshow("debug", img)
+    cv2.setMouseCallback('debug', __print_debug_info)
+    if override_callback:
+        cv2.setMouseCallback('debug', callback)
     cv2.waitKey()
     cv2.destroyAllWindows()
 
@@ -22,6 +35,7 @@ def grid_roi_top_lefts(top_left, width, height, width_step, height_step, width_o
 
 def detect_cursor(img, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug=True):
     def __cursor_ratios(top_left: np.ndarray) -> float:
+        # print(classify_color(img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width], k=2))
         roi = img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound)
@@ -45,3 +59,31 @@ def detect_cursor(img, top_lefts, width, height, hsv_lower_bound, hsv_upper_boun
         show(img)
         show(mask)
     return pos
+
+
+def kmeans(data: np.ndarray, k=3, normalize=False, limit=5000):
+    if normalize:
+        stats = (data.mean(axis=0), data.std(axis=0))
+        data = (data - stats[0]) / stats[1]
+    centers = data[:k]
+
+    for i in range(limit):
+        classifications = np.argmin(((data[..., np.newaxis] - centers.T[np.newaxis, ...]) ** 2).sum(axis=1), axis=1)
+        new_centers = np.array([data[classifications == j].mean(axis=0) for j in range(k)])
+        if np.all(new_centers == centers):
+            break
+        else:
+            centers = new_centers
+    else:
+        raise RuntimeError(f'Clustering algorithm did not complete within {limit} iterations')
+
+    if normalize:
+        centers = centers * stats[1] + stats[0]
+    return classifications, centers
+
+
+def classify_color(roi: np.ndarray, k=5):
+    h, w, _ = roi.shape
+    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+    classifications, centers = kmeans(hsv.reshape((-1, 3)), k, normalize=False)
+    return classifications.reshape((h, w)), centers
