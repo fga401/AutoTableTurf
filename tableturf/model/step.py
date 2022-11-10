@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union
+from typing import Optional
 
 import numpy as np
 
@@ -12,7 +12,7 @@ class Step:
         SpecialAttack = 1
         Skip = 2
 
-    def __init__(self, action: Action, card: Card, rotate: Union[int, None], pos: Union[np.ndarray, None]):
+    def __init__(self, action: Action, card: Card, rotate: Optional[int], pos: Optional[np.ndarray]):
         """
         :param pos: (x, y)
         """
@@ -29,11 +29,11 @@ class Step:
         return self.__card
 
     @property
-    def rotate(self) -> Union[int, None]:
+    def rotate(self) -> Optional[int]:
         return self.__rotate
 
     @property
-    def pos(self) -> Union[np.ndarray, None]:
+    def pos(self) -> Optional[np.ndarray]:
         return self.__pos
 
     @property

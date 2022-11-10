@@ -25,9 +25,34 @@ class TestStage(unittest.TestCase):
         for _ in range(10):
             detection.stage_rois(capture.capture(), True)
 
-    def test_stage(self):
+    def test_stage_4(self):
         roi_capture = FileLoader(files=[os.path.join(path, 'stage4', 'roi.jpg')])
         capture = FileLoader(path=os.path.join(path, 'stage4'))
         rois, width, height = detection.stage_rois(roi_capture.capture(), False)
         for _ in range(20):
-            detection.stage(capture.capture(), rois, width, height, True)
+            detection.stage(capture.capture(), rois, width, height, debug=True)
+
+    def test_stage_5(self):
+        roi_capture = FileLoader(files=[os.path.join(path, 'stage2', '0.jpg')])
+        capture = FileLoader(path=os.path.join(path, 'stage5'))
+        rois, width, height = detection.stage_rois(roi_capture.capture(), False)
+        for _ in range(20):
+            detection.stage(capture.capture(), rois, width, height, debug=True)
+
+    def test_preview_4(self):
+        roi_capture = FileLoader(files=[os.path.join(path, 'stage4', 'roi.jpg')])
+        stage_capture = FileLoader(files=[os.path.join(path, 'stage4', 'sp_off_10.jpg')])
+        capture = FileLoader(path=os.path.join(path, 'stage4'))
+        rois, width, height = detection.stage_rois(roi_capture.capture(), False)
+        for _ in range(30):
+            detected_stage, is_fiery = detection.stage(stage_capture.capture(), rois, width, height)
+            detection.preview(capture.capture(), detected_stage, is_fiery, rois, width, height, True)
+
+    def test_preview_6(self):
+        roi_capture = FileLoader(files=[os.path.join(path, 'stage1', 'i1.jpg')])
+        stage_capture = FileLoader(files=[os.path.join(path, 'stage6', '10.jpg')])
+        capture = FileLoader(path=os.path.join(path, 'stage6'))
+        rois, width, height = detection.stage_rois(roi_capture.capture(), False)
+        for _ in range(30):
+            detected_stage, is_fiery = detection.stage(stage_capture.capture(), rois, width, height, debug=False)
+            detection.preview(capture.capture(), detected_stage, is_fiery, rois, width, height, True)

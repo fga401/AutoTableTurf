@@ -1,4 +1,4 @@
-from typing import Union, List, Set
+from typing import List, Set, Optional
 
 import numpy as np
 
@@ -88,7 +88,7 @@ class Status:
     def his_deck(self) -> List[Card]:
         return self.__his_deck
 
-    def get_possible_steps(self, card: Union[Card, None] = None) -> Set[Step]:
+    def get_possible_steps(self, card: Optional[Card] = None) -> Set[Step]:
         if card is None:
             return self.__all_possible_steps
         return self.__all_possible_steps_by_card[card]

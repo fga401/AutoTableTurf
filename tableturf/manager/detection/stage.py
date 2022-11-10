@@ -1,7 +1,10 @@
+from typing import Optional
+
 import cv2
 import numpy as np
 
 from tableturf.manager.detection import util
+from tableturf.manager.detection.ui import special_on
 from tableturf.model import Stage, Pattern, Grid
 
 BOUNDING_BOX_TOP_LEFT = np.array([0, 750])
@@ -170,7 +173,7 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     hsv = cv2.cvtColor(bounding_box, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, EMPTY_COLOR_HSV_LOWER_BOUND, EMPTY_COLOR_HSV_UPPER_BOUND)
     mask = cv2.erode(mask, kernel=None)
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask)
+    num_labels, roi_labels, stats, centroids = cv2.connectedComponentsWithStats(mask)
     # list all rois from stats
     roi_index = _classify_connected_components(stats)
     square_width, square_height = stats[roi_index, 2:4].mean(axis=0)
@@ -184,9 +187,9 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
 
-    stage_grid = stage(img, rois, roi_width, roi_height, debug)[0].grid
+    stage_grid = stage(img, rois, roi_width, roi_height, last_stage=None, debug=debug)[0].grid
     not_wall = stage_grid != Grid.Wall.value
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(not_wall.astype(np.uint8) * 255)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(not_wall.astype(np.uint8) * 255)
     target_cc = np.argmax(stats[1:, 4]) + 1
     not_wall[labels != target_cc] = False
     row_mask = np.any(not_wall, axis=1)
@@ -197,7 +200,7 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     if debug:
         rois = rois.reshape(-1, 2)
         roi_centers = roi_centers.reshape(-1, 2)
-        colorful_mask = cv2.merge((labels * 53 % 255, labels * 101 % 255, labels * 151 % 255))
+        colorful_mask = cv2.merge((roi_labels * 53 % 255, roi_labels * 101 % 255, roi_labels * 151 % 255))
         img_mask = np.zeros_like(img)
         for center in centroids[roi_index]:
             cv2.circle(colorful_mask, np.rint(center).astype(int), 2, (0, 255, 0), 3)
@@ -214,7 +217,6 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
 
 
 COLOR_PIXEL_RATIO = 0.1
-CIRCLE_PIXEL_RATIO = 0.75
 # hsv color range
 NEUTRAL_COLOR_HSV_UPPER_BOUND = (255, 50, 220)
 NEUTRAL_COLOR_HSV_LOWER_BOUND = (0, 0, 180)
@@ -228,26 +230,11 @@ HIS_SPECIAL_COLOR_HSV_UPPER_BOUND = (100, 255, 255)
 HIS_SPECIAL_COLOR_HSV_LOWER_BOUND = (80, 80, 220)
 HIS_FIERY_SPECIAL_COLOR_HSV_UPPER_BOUND = (100, 30, 255)
 HIS_FIERY_SPECIAL_COLOR_HSV_LOWER_BOUND = (80, 0, 230)
-SQUARE_COLOR_HSV_RANGES = np.array([
-    (EMPTY_COLOR_HSV_LOWER_BOUND, EMPTY_COLOR_HSV_UPPER_BOUND),
-    (NEUTRAL_COLOR_HSV_LOWER_BOUND, NEUTRAL_COLOR_HSV_UPPER_BOUND),
-    (MY_INK_COLOR_HSV_LOWER_BOUND, MY_INK_COLOR_HSV_UPPER_BOUND),
-    (MY_SPECIAL_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_COLOR_HSV_UPPER_BOUND),
-    (HIS_INK_COLOR_HSV_LOWER_BOUND, HIS_INK_COLOR_HSV_UPPER_BOUND),
-    (HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND),
-    (HIS_FIERY_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_FIERY_SPECIAL_COLOR_HSV_UPPER_BOUND),
-])
-SQUARE_GRID_INFO = [
-    (Grid.MyInk.value, 0),
-    (Grid.MySpecial.value, 0),
-    (Grid.MySpecial.value, 1),
-    (Grid.HisInk.value, 0),
-    (Grid.HisSpecial.value, 0),
-    (Grid.HisSpecial.value, 1),
-    (Grid.Neutral.value, 0),
-    (Grid.Empty.value, 0),
-]
-
+STAGE_SQUARE_CANNY_THRESHOLD = (20, 60)
+MY_INK_TOP_COLOR_HSV_UPPER_BOUND = (40, 140, 255)
+MY_INK_TOP_COLOR_HSV_LOWER_BOUND = (30, 80, 220)
+MY_SPECIAL_TOP_COLOR_HSV_UPPER_BOUND = (30, 255, 255)
+MY_SPECIAL_TOP_COLOR_HSV_LOWER_BOUND = (20, 150, 220)
 DEBUG_COLOR = {
     Grid.Empty.value: (255, 255, 255),
     Grid.MyInk.value: (0, 255, 255),
@@ -259,10 +246,10 @@ DEBUG_COLOR = {
 }
 
 
-def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False) -> (Stage, Pattern):
+def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: Optional[Stage] = None, debug=False) -> (Stage, np.ndarray):
     """
     :param rois: (h, w, 2), rois[i][j] = (y, x)
-    :return: stage
+    :return: stage and is_fiery
     """
     h, w, _ = rois.shape
     rois = rois.reshape((h * w, 2))
@@ -287,46 +274,35 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
         if his_ink_ratio > COLOR_PIXEL_RATIO:
             return Grid.HisInk.value, 0
 
-        edge = cv2.Canny(__roi(top_left), 50, 100)
-        edge = cv2.dilate(edge, kernel=np.ones((4, 4), dtype=np.uint8))
-        edge = edge + 1  # inverse background and foreground
-        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge)
-        sub_roi = labels[roi_height // 5 * 2:roi_height // 5 * 3, roi_width // 2:roi_width // 5 * 3]
-        if np.all(sub_roi == 0):
-            target = 0
-        else:
-            target = np.round(np.mean(sub_roi[sub_roi > 0])).astype(np.uint8)
-        if target == 0:
-            target = np.argmax(stats[1:, 4]) + 1
-        sub_roi_idx = labels == target
-        sub_hsv = hsv[sub_roi_idx][np.newaxis, ...]
-        size = stats[target][4]
-
+        sub_hsv = hsv[roi_height // 5 * 2:roi_height // 5 * 3, roi_width // 2:roi_width // 5 * 3]
         his_fiery_sp = cv2.inRange(sub_hsv, HIS_FIERY_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_FIERY_SPECIAL_COLOR_HSV_UPPER_BOUND)
-        his_fiery_sp_ratio = np.sum(his_fiery_sp == 255) / size
+        his_fiery_sp_ratio = np.mean(his_fiery_sp == 255)
         if his_fiery_sp_ratio > COLOR_PIXEL_RATIO:
             return Grid.HisSpecial.value, 1
         his_sp = cv2.inRange(sub_hsv, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND)
-        his_sp_ratio = np.sum(his_sp == 255) / size
+        his_sp_ratio = np.mean(his_sp == 255)
         if his_sp_ratio > COLOR_PIXEL_RATIO:
             return Grid.HisSpecial.value, 0
         my_sp = cv2.inRange(sub_hsv, MY_SPECIAL_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_COLOR_HSV_UPPER_BOUND)
-        my_sp_ratio = np.sum(my_sp == 255) / size
+        my_sp_ratio = np.mean(my_sp == 255)
         if my_sp_ratio > COLOR_PIXEL_RATIO:
             return Grid.MySpecial.value, 0
 
         my_ink = cv2.inRange(sub_hsv, MY_INK_COLOR_HSV_LOWER_BOUND, MY_INK_COLOR_HSV_UPPER_BOUND)
-        my_ink_ratio = np.sum(my_ink == 255) / size
+        my_ink_ratio = np.mean(my_ink == 255)
         if my_ink_ratio > COLOR_PIXEL_RATIO:
-            labels[np.bitwise_not(sub_roi_idx)] = 0
-            labels = labels.astype(np.uint8)
-            smooth_labels = cv2.dilate(labels, kernel=np.ones((3, 3), dtype=np.uint8))
-            smooth_labels = cv2.erode(smooth_labels, kernel=np.ones((3, 3), dtype=np.uint8))
-            area = np.sum(smooth_labels > 0)
-            contours, hierarchy = cv2.findContours(labels, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            contour = contours[0]
-            center, radius = cv2.minEnclosingCircle(contour)
-            if area / (np.power(radius, 2) * np.pi) > CIRCLE_PIXEL_RATIO:
+            edge = cv2.Canny(__roi(top_left), *STAGE_SQUARE_CANNY_THRESHOLD)
+            edge = cv2.dilate(edge, kernel=np.ones((3, 3), dtype=np.uint8))
+            edge = edge + 1  # inverse background and foreground
+            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge)
+            sub_roi_idx = np.argwhere(centroids[:, 1] <= roi_height // 4)
+            sub_roi_idx = np.isin(labels, sub_roi_idx)
+            sub_hsv = hsv[sub_roi_idx][np.newaxis, ...]
+            if sub_hsv.size == 0:
+                return Grid.MyInk.value, 0
+            ink_size = np.sum(cv2.inRange(sub_hsv, MY_INK_TOP_COLOR_HSV_LOWER_BOUND, MY_INK_TOP_COLOR_HSV_UPPER_BOUND) == 255)
+            sp_size = np.sum(cv2.inRange(sub_hsv, MY_SPECIAL_TOP_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_TOP_COLOR_HSV_UPPER_BOUND) == 255)
+            if sp_size >= ink_size:
                 return Grid.MySpecial.value, 1
             else:
                 return Grid.MyInk.value, 0
@@ -335,6 +311,11 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
     stage = np.array([__square(k, top_left) for k, top_left in enumerate(rois)])
     is_fiery = stage[:, 1]
     stage = stage[:, 0]
+    if last_stage is not None:
+        last_stage_grid = last_stage
+        stage[last_stage_grid == Grid.Neutral.value] = Grid.Neutral.value
+        stage[last_stage_grid == Grid.MySpecial.value] = Grid.MySpecial.value
+        stage[last_stage_grid == Grid.HisSpecial.value] = Grid.HisSpecial.value
 
     if debug:
         img_2 = img.copy()
@@ -346,8 +327,8 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
         for k, left_top in enumerate(opencv_rois):
             roi = __roi(rois[k])
             _hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-            edge = cv2.Canny(roi, 50, 90)
-            edge = cv2.dilate(edge, kernel=np.ones((3, 3), dtype=np.uint8))
+            edge = cv2.Canny(roi, 20, 60)
+            edge = cv2.dilate(edge, kernel=np.ones((2, 2), dtype=np.uint8))
             edge = edge + 1  # inverse background and foreground
             num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=8)
             color = DEBUG_COLOR[stage[k]]
@@ -364,71 +345,214 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False)
         util.show(mask_edge)
         # util.show(mask_color)
 
-    stage = Stage(stage.reshape((h, w)))
-    return stage, is_fiery.reshape((h, w))
+    stage = stage.reshape((h, w))
+    is_fiery = is_fiery.reshape((h, w))
+    # mark all invalid fiery special squares as trivial squares
+    valid_fiery_sp = Stage(stage).my_fiery_sp
+    all_fiery_sp = np.argwhere(np.bitwise_and(is_fiery, stage == Grid.MySpecial.value))
+    invalid_fiery_sp = all_fiery_sp[np.bitwise_not(np.array([idx in valid_fiery_sp for idx in all_fiery_sp], dtype=bool))]
+    is_fiery[invalid_fiery_sp] = False
+    stage[invalid_fiery_sp] = Grid.MyInk.value
+    return Stage(stage), is_fiery
 
-# # TODO
-# def preview(img: np.ndarray, stage: Stage, rois: np.ndarray, roi_width, roi_height, debug=False) -> (Stage, Pattern):
-#     h, w, _ = rois.shape
-#     rois = rois.reshape((h * w, 2))
-#
-#     def __square_ratios(top_left: np.ndarray, hsv_ranges: Iterable) -> float:
-#         roi = img[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width]
-#         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-#         masks = np.array([cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound) for hsv_lower_bound, hsv_upper_bound in hsv_ranges])
-#         return np.sum(masks == 255, axis=(1, 2)) / (roi_width * roi_height)
-#
-#     ratios = np.array([__square_ratios(top_left, LIGHTER_HSV_RANGES) for top_left in rois])
-#     is_wall = ratios.max(axis=1, initial=0) < SQUARE_PIXEL_RATIO
-#     squares = ratios.argmax(axis=1)
-#     squares[is_wall] = -1
-#
-#     img_2 = img.copy()
-#
-#     def __callback(event, x, y, flags, param):
-#         if event == cv2.EVENT_LBUTTONDOWN:
-#             idx = -1
-#             for k, top_left in enumerate(rois):
-#                 if top_left[1] <= x <= top_left[1] + roi_width and top_left[0] <= y <= top_left[0] + roi_height:
-#                     idx = k
-#                     break
-#             if idx == -1:
-#                 return
-#             logger.debug(f'detection.debug.roi: No.={idx}')
-#             top_left = rois[idx]
-#             roi = img_2[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width]
-#             hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-#             logger.debug(f'detection.debug.roi: mean.100={np.mean(roi, axis=(0, 1))}, mean.50={np.mean(roi[:roi_height // 2], axis=(0, 1))}, , mean.25={np.mean(roi[:roi_height // 4], axis=(0, 1))}')
-#
-#     if debug:
-#         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
-#         mask = np.zeros_like(img)
-#         gray = np.zeros_like(img)
-#         # calculate
-#         for k, top_left in enumerate(rois):
-#             roi = img[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width]
-#             hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-#             _gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-#             # _gray = cv2.equalizeHist(_gray)
-#             # hsv[:,:,0] = cv2.equalizeHist(hsv[:,:,0])
-#             # hsv[:,:,1] = cv2.equalizeHist(hsv[:,:,1])
-#             # hsv[:,:,2] = cv2.equalizeHist(hsv[:,:,2])
-#             # hsv[:,:,0] = cv2.equalizeHist(roi[:,:,0])
-#             # hsv[:,:,1] = cv2.equalizeHist(roi[:,:,1])
-#             # hsv[:,:,2] = cv2.equalizeHist(roi[:,:,2])
-#             edge = cv2.Canny(cv2.equalizeHist(hsv[:, :, 0]), 100, 400)
-#             # edge = cv2.Canny(roi, 0, 50)
-#             mask[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width] = edge[..., np.newaxis]
-#             gray[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width] = _gray[..., np.newaxis]
-#         # draw
-#         for k, left_top in enumerate(opencv_rois):
-#             color = DEBUG_COLOR[squares[k]]
-#             cv2.rectangle(img, left_top, left_top + (roi_width, roi_height), color, 1)
-#             cv2.putText(img, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-#
-#         util.show(img_2, __callback)
-#         # util.show(img, __callback)
-#         # util.show(gray, __callback)
-#         util.show(mask, __callback)
-#
-#     return None, None
+
+PREVIEW_SQUARE_CANNY_THRESHOLD = (50, 80)
+PREVIEW_INK_DIAGONAL_RATIO = 0.8
+PREVIEW_INK_RATIO = 0.2
+
+PREVIEW_SPECIAL_RATIO = 0.025
+PREVIEW_MY_FIRE_COLOR_HSV_RANGES = [
+    [(20, 125, 240), (30, 140, 255)]
+]
+PREVIEW_HIS_FIRE_COLOR_HSV_RANGES = [
+    [(80, 25, 235), (90, 45, 245)],
+]
+PREVIEW_EMPTY_COLOR_HSV_RANGES = [
+    [(0, 0, 180), (255, 50, 220)],
+]
+PREVIEW_EMPTY_ORANGE_COLOR_HSV_RANGES = [
+    [(10, 130, 160), (20, 180, 200)],
+]
+PREVIEW_NEUTRAL_COLOR_HSV_RANGES = [
+    [(0, 0, 205), (120, 15, 225)]
+]
+PREVIEW_MY_INK_COLOR_HSV_RANGES = [
+    [(25, 90, 230), (35, 190, 240)],
+]
+PREVIEW_HIS_INK_COLOR_HSV_RANGES = [
+    [(110, 70, 240), (120, 100, 255)],
+]
+PREVIEW_MY_SPECIAL_COLOR_HSV_RANGES = [
+    [(10, 95, 240), (20, 130, 255)],
+]
+PREVIEW_HIS_SPECIAL_COLOR_HSV_RANGES = [
+    [(90, 100, 240), (100, 130, 255)],
+]
+PREVIEW_MY_FIERY_SPECIAL_COLOR_HSV_RANGES = [
+    [(20, 120, 240), (30, 140, 250)],
+    [(15, 110, 230), (25, 150, 255)],
+    [(20, 125, 240), (30, 140, 255)],
+]
+PREVIEW_HIS_FIERY_SPECIAL_COLOR_HSV_RANGES = [
+    [(80, 10, 230), (90, 15, 245)],
+    [(90, 70, 235), (100, 90, 245)],
+    [(80, 25, 235), (90, 45, 245)],
+]
+PREVIEW_WALL_COLOR_HSV_RANGES = [
+    [(120, 10, 150), (130, 80, 255)],
+]
+
+PREVIEW_MY_INK_DARKER_GRAY_COLOR_HSV_RANGES = [
+    [(20, 50, 170), (40, 80, 220)],
+]
+PREVIEW_HIS_INK_DARKER_GRAY_COLOR_HSV_RANGES = [
+    [(110, 50, 180), (120, 80, 240)],
+]
+PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
+    [(20, 180, 190), (30, 250, 210)],
+]
+PREVIEW_HIS_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
+    [(0, 40, 180), (10, 70, 190)],
+    [(140, 45, 120), (180, 80, 190)],
+]
+
+
+def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False) -> Optional[Pattern]:
+    h, w, _ = rois.shape
+    stage_grid = stage.grid.reshape((h * w))
+    is_fiery = is_fiery.reshape((h * w))
+    rois = rois.reshape((h * w, 2))
+    sp_on = special_on(img)
+
+    def __roi(top_left: np.ndarray):
+        return img[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width]
+
+    def __is_ink_preview(k, roi: np.ndarray) -> bool:
+        edge = cv2.Canny(roi, *PREVIEW_SQUARE_CANNY_THRESHOLD)
+        edge = cv2.dilate(edge, kernel=np.ones((2, 2), dtype=np.uint8))
+        edge = np.rot90(edge)
+        is_diagonal = [np.mean(np.diag(edge, i) == 255) > PREVIEW_INK_DIAGONAL_RATIO for i in range(-roi_width // 2, roi_width // 2)]
+        return np.mean(is_diagonal) > PREVIEW_INK_RATIO
+
+    def __in_ranges(roi, ranges):
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        return np.any([cv2.inRange(hsv, lower_bound, upper_bound) for lower_bound, upper_bound in ranges], axis=0)
+
+    def __is_valid_mask(mask, min_area=4, min_num=3) -> bool:
+        if np.mean(mask) < PREVIEW_SPECIAL_RATIO:
+            return False
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
+        ares = stats[1:, 4]
+        valid = np.bitwise_and(ares >= min_area, ares < 50)
+        if np.sum(valid) < min_num:
+            return False
+        # valid_cc = centroids[1:][valid]
+        # dist = np.amax(valid_cc, axis=0) - np.amin(valid_cc, axis=0)
+        # return np.all(dist > (roi_width // 3, roi_height // 3))
+        return True
+
+    def __is_special_preview(k, roi: np.ndarray) -> bool:
+        extra_ranges = []
+        if k + w < h * w and is_fiery[k + w]:
+            if stage_grid[k + w] == Grid.MySpecial.value:
+                extra_ranges = PREVIEW_MY_FIRE_COLOR_HSV_RANGES
+            elif stage_grid[k + w] == Grid.HisSpecial.value:
+                extra_ranges = PREVIEW_HIS_FIRE_COLOR_HSV_RANGES
+        if stage_grid[k] == Grid.Empty.value:
+            mask = __in_ranges(roi, PREVIEW_EMPTY_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask):
+                return True
+            mask = __in_ranges(roi, PREVIEW_EMPTY_ORANGE_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask, min_area=6, min_num=5):
+                return True
+        if stage_grid[k] == Grid.Neutral.value:
+            mask = __in_ranges(roi, PREVIEW_NEUTRAL_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask):
+                return True
+        if stage_grid[k] == Grid.MyInk.value:
+            if not sp_on:
+                mask = __in_ranges(roi, PREVIEW_MY_INK_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask):
+                    return True
+            else:
+                mask = __in_ranges(roi, PREVIEW_MY_INK_DARKER_GRAY_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask):
+                    return True
+                mask = __in_ranges(roi, PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask, min_area=6, min_num=4):
+                    return True
+        if stage_grid[k] == Grid.HisInk.value:
+            if not sp_on:
+                mask = __in_ranges(roi, PREVIEW_HIS_INK_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask):
+                    return True
+            else:
+                mask = __in_ranges(roi, PREVIEW_HIS_INK_DARKER_GRAY_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask):
+                    return True
+                mask = __in_ranges(roi, PREVIEW_HIS_INK_DARKER_ORANGE_COLOR_HSV_RANGES + extra_ranges)
+                if __is_valid_mask(mask, min_area=6, min_num=4):
+                    return True
+        if stage_grid[k] == Grid.MySpecial.value:
+            if is_fiery[k]:
+                mask = __in_ranges(roi, PREVIEW_MY_FIERY_SPECIAL_COLOR_HSV_RANGES + extra_ranges)
+            else:
+                mask = __in_ranges(roi, PREVIEW_MY_SPECIAL_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask):
+                return True
+        if stage_grid[k] == Grid.HisSpecial.value:
+            if is_fiery[k]:
+                mask = __in_ranges(roi, PREVIEW_HIS_FIERY_SPECIAL_COLOR_HSV_RANGES + extra_ranges)
+            else:
+                mask = __in_ranges(roi, PREVIEW_HIS_SPECIAL_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask):
+                return True
+        if stage_grid[k] == Grid.Wall.value:
+            mask = __in_ranges(roi, PREVIEW_WALL_COLOR_HSV_RANGES + extra_ranges)
+            if __is_valid_mask(mask):
+                return True
+        return False
+
+    def __square(k, top_left: np.ndarray):
+        roi = img[top_left[0]:top_left[0] + roi_height, top_left[1]:top_left[1] + roi_width]
+        if __is_ink_preview(k, roi):
+            return Grid.MyInk.value
+        if __is_special_preview(k, roi):
+            return Grid.MySpecial.value
+        return Grid.Empty.value
+
+    pattern = np.array([__square(k, top_left) for k, top_left in enumerate(rois)])
+
+    if debug:
+        img_2 = img.copy()
+        opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
+        mask_edge = np.zeros_like(img)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        mask_color = __in_ranges(img, PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES ).astype(np.uint8) * 255
+        # calculate
+        mask_color = cv2.merge([mask_color, mask_color, mask_color])
+        for k, left_top in enumerate(opencv_rois):
+            roi = __roi(rois[k])
+            _hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+            _gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            _hsv[:, :, 0] = 0
+            _hsv[:, :, 2] = 0
+            color = DEBUG_COLOR[pattern[k]]
+            edge = cv2.Canny(_gray, 20, 30)
+            # edge = cv2.dilate(edge, kernel=np.ones((2, 2), dtype=np.uint8))
+
+            # draw
+            mask_edge[rois[k][0]:rois[k][0] + roi_height, rois[k][1]:rois[k][1] + roi_width] = edge[..., np.newaxis]
+            cv2.rectangle(img_2, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.putText(img_2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+            cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+            cv2.rectangle(mask_color, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.putText(mask_color, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+        util.show(img)
+        util.show(img_2)
+        util.show(mask_edge)
+        util.show(mask_color)
+    if np.all(pattern == Grid.Empty.value):
+        return None
+    return Pattern(pattern.reshape((h, w)))

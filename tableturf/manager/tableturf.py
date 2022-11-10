@@ -1,6 +1,6 @@
 from datetime import datetime
 from time import sleep
-from typing import Union, List
+from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -15,7 +15,7 @@ from tableturf.model import Status, Card, Step
 
 
 class Exit:
-    def __init__(self, max_win: Union[int, None] = None, max_battle: Union[int, None] = None, max_time: Union[int, None] = None):
+    def __init__(self, max_win: Optional[int] = None, max_battle: Optional[int] = None, max_time: Optional[int] = None):
         self.__max_win = max_win
         self.__max_battle = max_battle
         self.__max_time = max_time
@@ -71,7 +71,7 @@ class TableTurfManager:
         self.__debug = debug
         self.stats = Stats()
 
-    def run(self, deck: int, his_deck: Union[List[Card], None] = None):
+    def run(self, deck: int, his_deck: Optional[List[Card]] = None):
         start_time = datetime.now().timestamp()
         while True:
             self.__select_deck(deck)
@@ -129,7 +129,7 @@ class TableTurfManager:
     def __get_hands(self, screen: np.ndarray) -> List[Card]:
         pass
 
-    def __get_status(self, screen: np.ndarray, my_deck: Union[List[Card], None] = None, his_deck: Union[List[Card], None] = None) -> Status:
+    def __get_status(self, screen: np.ndarray, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
         # TODO: get hands
         # TODO: get stage
         # TODO: get SP
