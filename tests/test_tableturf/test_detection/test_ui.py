@@ -28,3 +28,8 @@ class TestUI(unittest.TestCase):
         capture = FileLoader(path=os.path.join(path, 'stage4'))
         for _ in range(20):
             detection.special_on(capture.capture(), True)
+
+    def test_replay_cursor(self):
+        capture = FileLoader(path=os.path.join(path, 'replay'))
+        for _ in range(10):
+            detection.replay_cursor(capture.capture(), True)

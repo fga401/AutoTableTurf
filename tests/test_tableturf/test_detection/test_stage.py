@@ -56,3 +56,8 @@ class TestStage(unittest.TestCase):
         for _ in range(30):
             detected_stage, is_fiery = detection.stage(stage_capture.capture(), rois, width, height, debug=False)
             detection.preview(capture.capture(), detected_stage, is_fiery, rois, width, height, True)
+
+    def test_sp(self):
+        capture = FileLoader(path=os.path.join(path, 'stage5'))
+        for _ in range(10):
+            detection.sp(capture.capture(), True)

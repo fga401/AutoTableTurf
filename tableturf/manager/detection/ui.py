@@ -97,3 +97,26 @@ def special_on(img: np.ndarray, debug=False) -> bool:
     ) != -1
     logger.debug(f'detection.special_on: return={result}')
     return result
+
+
+REPLAY_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[760, 705], [760, 1050]])
+REPLAY_CURSOR_ROI_WIDTH = 180
+REPLAY_CURSOR_ROI_HEIGHT = 70
+REPLAY_CURSOR_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
+REPLAY_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
+REPLAY_CURSOR_PIXEL_RATIO = 0.5
+
+
+def replay_cursor(img: np.ndarray, debug=False) -> int:
+    pos = util.detect_cursor(
+        img,
+        REPLAY_CURSOR_NUMPY_ROI_TOP_LEFTS,
+        REPLAY_CURSOR_ROI_WIDTH,
+        REPLAY_CURSOR_ROI_HEIGHT,
+        REPLAY_CURSOR_COLOR_HSV_LOWER_BOUND,
+        REPLAY_CURSOR_COLOR_HSV_UPPER_BOUND,
+        REPLAY_CURSOR_PIXEL_RATIO,
+        debug,
+    )
+    logger.debug(f'detection.replay_cursor: return={pos}')
+    return pos

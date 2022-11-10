@@ -34,14 +34,14 @@ def grid_roi_top_lefts(top_left, width, height, width_step, height_step, width_o
 
 
 def detect_cursor(img, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug=True):
-    def __cursor_ratios(top_left: np.ndarray) -> float:
+    def __cursor_ratio(top_left: np.ndarray) -> float:
         # print(classify_color(img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width], k=2))
         roi = img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound)
         return np.sum(mask == 255) / (width * height)
 
-    ratios = np.array([__cursor_ratios(top_left) for top_left in top_lefts])
+    ratios = np.array([__cursor_ratio(top_left) for top_left in top_lefts])
     pos = np.argmax(ratios)
     if ratios[pos] < threshold:
         pos = -1

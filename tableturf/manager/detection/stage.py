@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np
 
+from logger import logger
 from tableturf.manager.detection import util
 from tableturf.manager.detection.ui import special_on
 from tableturf.model import Stage, Pattern, Grid
@@ -213,6 +214,8 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
             cv2.rectangle(img_mask, roi, roi + (roi_width, roi_height), (255, 255, 255), 1)
         util.show(img)
         util.show(img_mask)
+
+    logger.debug(f'detection.stage_rois: return={rois, roi_width, roi_height}')
     return rois, roi_width, roi_height
 
 
@@ -353,7 +356,10 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
     invalid_fiery_sp = all_fiery_sp[np.bitwise_not(np.array([idx in valid_fiery_sp for idx in all_fiery_sp], dtype=bool))]
     is_fiery[invalid_fiery_sp] = False
     stage[invalid_fiery_sp] = Grid.MyInk.value
-    return Stage(stage), is_fiery
+    stage = Stage(stage)
+
+    logger.debug(f'detection.stage: return={stage, is_fiery}')
+    return stage, is_fiery
 
 
 PREVIEW_SQUARE_CANNY_THRESHOLD = (50, 80)
@@ -446,9 +452,6 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         valid = np.bitwise_and(ares >= min_area, ares < 50)
         if np.sum(valid) < min_num:
             return False
-        # valid_cc = centroids[1:][valid]
-        # dist = np.amax(valid_cc, axis=0) - np.amin(valid_cc, axis=0)
-        # return np.all(dist > (roi_width // 3, roi_height // 3))
         return True
 
     def __is_special_preview(k, roi: np.ndarray) -> bool:
@@ -528,7 +531,7 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
         mask_edge = np.zeros_like(img)
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask_color = __in_ranges(img, PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES ).astype(np.uint8) * 255
+        mask_color = __in_ranges(img, PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES).astype(np.uint8) * 255
         # calculate
         mask_color = cv2.merge([mask_color, mask_color, mask_color])
         for k, left_top in enumerate(opencv_rois):
@@ -554,5 +557,52 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         util.show(mask_edge)
         util.show(mask_color)
     if np.all(pattern == Grid.Empty.value):
+        logger.debug(f'detection.preview: return=None')
         return None
-    return Pattern(pattern.reshape((h, w)))
+    pattern = Pattern(pattern.reshape((h, w)))
+    logger.debug(f'detection.preview: return={pattern}')
+    return pattern
+
+
+MY_SP_ROI_TOP_LEFTS = [(987, 61), (987, 231), (987, 399)]
+HIS_SP_ROI_TOP_LEFTS = [(64, 50), (64, 183), (64, 314)]
+SP_ROI_WIDTH = 15
+SP_ROI_HEIGHT = 15
+MY_SP_ROI_WIDTH_STEP = 32
+HIS_SP_ROI_WIDTH_STEP = 25
+SP_PIXEL_RATIO = 0.4
+
+
+def sp(img: np.ndarray, debug=False) -> Tuple[int, int]:
+    my_rois = np.concatenate([util.grid_roi_top_lefts(toe_left, width=5, height=1, width_step=MY_SP_ROI_WIDTH_STEP, height_step=0, width_offset=0, height_offset=0).squeeze() for toe_left in MY_SP_ROI_TOP_LEFTS])
+    his_rois = np.concatenate([util.grid_roi_top_lefts(toe_left, width=5, height=1, width_step=HIS_SP_ROI_WIDTH_STEP, height_step=0, width_offset=0, height_offset=0).squeeze() for toe_left in HIS_SP_ROI_TOP_LEFTS])
+
+    def __ratio(top_left: np.ndarray, lower_bound, upper_bound) -> float:
+        roi = img[top_left[0]:top_left[0] + SP_ROI_HEIGHT, top_left[1]:top_left[1] + SP_ROI_WIDTH]
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+        return np.sum(mask == 255) / (SP_ROI_HEIGHT * SP_ROI_WIDTH)
+
+    my_ratios = np.array([__ratio(top_left, MY_SPECIAL_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_COLOR_HSV_UPPER_BOUND) for top_left in my_rois])
+    his_ratios = np.array([__ratio(top_left, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND) for top_left in his_rois])
+    my_sp = np.sum(my_ratios > SP_PIXEL_RATIO)
+    his_sp = np.sum(his_ratios > SP_PIXEL_RATIO)
+
+    if debug:
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        my_mask = cv2.inRange(hsv, MY_SPECIAL_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_COLOR_HSV_UPPER_BOUND)
+        his_mask = cv2.inRange(hsv, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND)
+        mask = np.maximum(my_mask, his_mask)
+        mask = cv2.merge([mask, mask, mask])
+        opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in my_rois])
+        for k, left_top in enumerate(opencv_rois):
+            cv2.rectangle(img, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+            cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+        opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in his_rois])
+        for k, left_top in enumerate(opencv_rois):
+            cv2.rectangle(img, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+            cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+        util.show(img)
+        util.show(mask)
+    logger.debug(f'detection.sp: return={my_sp, his_sp}')
+    return my_sp, his_sp
