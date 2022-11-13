@@ -3,7 +3,6 @@ from time import sleep
 from typing import List, Optional
 
 import cv2
-import numpy as np
 
 from capture import Capture
 from controller import Controller
@@ -11,7 +10,7 @@ from tableturf.ai import AI
 from tableturf.manager import action
 from tableturf.manager import detection
 from tableturf.manager.data import Stats, Result
-from tableturf.model import Status, Card, Step
+from tableturf.model import Status, Card, Step, Stage
 
 
 class Exit:
@@ -47,9 +46,11 @@ class TableTurfManager:
         return wrapper
 
     @staticmethod
-    def __multi_detect(detect_fn, times=3):
+    def __multi_detect(detect_fn, merge_fn=None, times=3):
         def wrapper():
             results = [detect_fn() for _ in range(times)]
+            if merge_fn is not None:
+                return merge_fn(results)
             return max(set(results), key=results.count)
 
         return wrapper
@@ -70,31 +71,28 @@ class TableTurfManager:
         self.__closer = closer
         self.__debug = debug
         self.stats = Stats()
+        self.__session = dict()
 
     def run(self, deck: int, his_deck: Optional[List[Card]] = None):
-        start_time = datetime.now().timestamp()
+        self.stats.start_time = datetime.now().timestamp()
         while True:
-            self.__select_deck(deck)
-            my_deck = self.__get_deck()
-            sleep(10)  # wait for animate
-            self.__redraw()
-            # for round in range(15):
-            #     screen = self.__capture()
-            #     status = self.__get_status(screen, my_deck, his_deck)
-            #     step = self.__ai.next_step(status)
-            #     self.__move(step)
-            # screen = self.__capture()
+            sleep(10)
+            my_deck = self.__select_deck(deck)
+            sleep(10)
+            self.__redraw(my_deck=my_deck)
+            sleep(10)
+            self.__init_roi()
+            for round in range(15):
+                status = self.__get_status(my_deck, his_deck)
+                step = self.__ai.next_step(status)
+                self.__move(step)
+                sleep(10)
+            sleep(10)
             result = self.__get_result()
-            # update stats
-            if result.my_ink > result.his_ink:
-                self.stats.win += 1
-            now = datetime.now().timestamp()
-            self.stats.time = now - start_time
-            self.stats.battle += 1
-            # keep playing
+            self.__update_stats(result)
             self.__close(self.__closer.exit(self.stats))
 
-    def __select_deck(self, deck: int):
+    def __select_deck(self, deck: int) -> List[Card]:
         def deck_cursor() -> int:
             img = self.__capture()
             return detection.deck_cursor(img, debug=self.__debug)
@@ -103,16 +101,13 @@ class TableTurfManager:
             macro = action.move_deck_cursor_marco(target, current)
             self.__controller.macro(macro)
 
-        self.__feedback(deck, self.__multi_detect(deck_cursor), move_cursor)
+        self.__feedback(deck, deck_cursor, move_cursor)
         self.__controller.press_buttons([Controller.Button.A])
+        return None
 
-    def __get_deck(self) -> List[Card]:
-        # TODO
-        pass
-
-    def __redraw(self):
-        status = None  # TODO
-        redraw = self.__ai.redraw(status)
+    def __redraw(self, stage: Optional[Stage] = None, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None):
+        hands = detection.hands(self.__capture(), debug=self.__debug)
+        redraw = self.__ai.redraw(hands, stage, my_deck, his_deck)
         target = 1 if redraw else 0
 
         def redraw_cursor() -> int:
@@ -123,32 +118,50 @@ class TableTurfManager:
             macro = action.move_redraw_cursor_marco(target, current)
             self.__controller.macro(macro)
 
-        self.__feedback(target, self.__multi_detect(redraw_cursor), move_cursor)
+        self.__feedback(target, redraw_cursor, move_cursor)
         self.__controller.press_buttons([Controller.Button.A])
 
-    def __get_hands(self, screen: np.ndarray) -> List[Card]:
-        pass
+    def __init_roi(self):
+        img = self.__capture()
+        rois, roi_width, roi_height = detection.stage_rois(img, debug=self.__debug)
+        self.__session['rois'] = rois
+        self.__session['roi_width'] = roi_width
+        self.__session['roi_height'] = roi_height
+        self.__session['last_stage'] = None
 
-    def __get_status(self, screen: np.ndarray, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
-        # TODO: get hands
-        # TODO: get stage
-        # TODO: get SP
-        pass
-
-    def __get_result(self) -> Result:
-        pass
+    def __get_status(self, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
+        img = self.__capture()
+        rois, roi_width, roi_height, last_stage = self.__session['rois'], self.__session['roi_width'], self.__session['roi_height'], self.__session['last_stage']
+        stage = detection.stage(img, rois, roi_width, roi_height, last_stage, debug=self.__debug)
+        hands = detection.hands(img, debug=self.__debug)
+        my_sp, his_sp = detection.sp(img, debug=self.__debug)
+        return Status(stage, hands, my_sp, his_sp, my_deck, his_deck)
 
     def __move(self, step: Step):
         pass
 
-    def __place(self, step: Step):
-        pass
+    def __get_result(self) -> Result:
+        # TODO
+        img = self.__capture()
+        return Result(0, 0)
 
-    def __special_attack(self, step: Step):
-        pass
-
-    def __skip(self, step: Step):
-        pass
+    def __update_stats(self, result: Result):
+        if result.my_ink > result.his_ink:
+            self.stats.win += 1
+        now = datetime.now().timestamp()
+        self.stats.time = now - self.stats.start_time
+        self.stats.battle += 1
 
     def __close(self, close: bool):
-        pass
+        target = 1 if close else 0
+
+        def replay_cursor() -> int:
+            img = self.__capture()
+            return detection.replay_cursor(img, debug=self.__debug)
+
+        def move_cursor(target: int, current: int):
+            macro = action.move_replay_cursor_marco(target, current)
+            self.__controller.macro(macro)
+
+        self.__feedback(target, replay_cursor, move_cursor)
+        self.__controller.press_buttons([Controller.Button.A])

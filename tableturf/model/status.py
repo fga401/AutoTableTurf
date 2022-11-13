@@ -60,9 +60,9 @@ class Status:
             return result
 
         self.__all_possible_steps_by_card = {
-            card: possible_steps_without_special_attack(card).union(possible_steps_with_special_attack(card)) for card in hands
+            card: list(possible_steps_without_special_attack(card).union(possible_steps_with_special_attack(card))) for card in hands
         }
-        self.__all_possible_steps = {step for steps_set in self.__all_possible_steps_by_card.values() for step in steps_set}
+        self.__all_possible_steps = [step for steps_set in self.__all_possible_steps_by_card.values() for step in steps_set]
 
     @property
     def stage(self) -> Stage:
@@ -88,7 +88,7 @@ class Status:
     def his_deck(self) -> List[Card]:
         return self.__his_deck
 
-    def get_possible_steps(self, card: Optional[Card] = None) -> Set[Step]:
+    def get_possible_steps(self, card: Optional[Card] = None) -> List[Step]:
         if card is None:
             return self.__all_possible_steps
         return self.__all_possible_steps_by_card[card]

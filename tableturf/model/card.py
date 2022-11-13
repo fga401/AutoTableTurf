@@ -45,9 +45,10 @@ class Pattern:
         return NotImplemented
 
     def __repr__(self):
-        h, w = np.max(self.__offsets, axis=0) + (1, 1)
+        h, w = np.max(self.__offsets, axis=0) - np.min(self.__offsets, axis=0) + (1, 1)
         grid = np.zeros((h, w))
-        grid[self.__offsets[:, 0], self.__offsets[:, 1]] = self.__squares
+        offset = self.__offsets - np.min(self.__offsets, axis=0)
+        grid[offset[:, 0], offset[:, 1]] = self.__squares
         return str(grid)
 
     def __str__(self):

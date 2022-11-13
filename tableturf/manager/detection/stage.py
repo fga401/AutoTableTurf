@@ -195,6 +195,19 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
     not_wall[labels != target_cc] = False
     row_mask = np.any(not_wall, axis=1)
     col_mask = np.any(not_wall, axis=0)
+
+    def __expand_mask(mask: np.ndarray) -> np.ndarray:
+        idx = np.argwhere(mask)
+        if idx.size == 0:
+            return mask
+        lower = np.maximum(0, np.min(idx) - 1)
+        upper = np.minimum(mask.size - 1, np.max(idx) + 1)
+        mask[lower] = True
+        mask[upper] = True
+        return mask
+
+    # row_mask = __expand_mask(row_mask)
+    # col_mask = __expand_mask(col_mask)
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
 
@@ -321,7 +334,7 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
         stage[last_stage_grid == Grid.HisSpecial.value] = Grid.HisSpecial.value
 
     if debug:
-        img_2 = img.copy()
+        img2 = img.copy()
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         # mask_color = cv2.inRange(hsv, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND)
@@ -340,11 +353,11 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
             else:
                 thickness = 1
             mask_edge[rois[k][0]:rois[k][0] + roi_height, rois[k][1]:rois[k][1] + roi_width] = (labels * 47 % 255)[..., np.newaxis]
-            cv2.rectangle(img_2, left_top, left_top + (roi_width, roi_height), color, thickness)
-            cv2.putText(img_2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+            cv2.rectangle(img2, left_top, left_top + (roi_width, roi_height), color, thickness)
+            cv2.putText(img2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, thickness)
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        util.show(img_2)
+        util.show(img2)
         util.show(mask_edge)
         # util.show(mask_color)
 
@@ -525,12 +538,19 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         return Grid.Empty.value
 
     pattern = np.array([__square(k, top_left) for k, top_left in enumerate(rois)])
+    pattern = pattern.reshape((h, w))
+    no_pattern = np.all(pattern == Grid.Empty.value)
+    if not no_pattern:
+        pattern_mask = (pattern != Grid.Empty.value).astype(np.uint8)
+        _, labels, stats, _ = cv2.connectedComponentsWithStats(pattern_mask, connectivity=8)
+        target_label = np.argmax(stats[1:, 4]) + 1
+        pattern[np.bitwise_not(labels == target_label)] = Grid.Empty.value
 
     if debug:
-        img_2 = img.copy()
+        img2 = img.copy()
+        _pattern = pattern.reshape(-1)
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
         mask_edge = np.zeros_like(img)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         mask_color = __in_ranges(img, PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES).astype(np.uint8) * 255
         # calculate
         mask_color = cv2.merge([mask_color, mask_color, mask_color])
@@ -540,23 +560,22 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
             _gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             _hsv[:, :, 0] = 0
             _hsv[:, :, 2] = 0
-            color = DEBUG_COLOR[pattern[k]]
+            color = DEBUG_COLOR[_pattern[k]]
             edge = cv2.Canny(_gray, 20, 30)
             # edge = cv2.dilate(edge, kernel=np.ones((2, 2), dtype=np.uint8))
 
             # draw
             mask_edge[rois[k][0]:rois[k][0] + roi_height, rois[k][1]:rois[k][1] + roi_width] = edge[..., np.newaxis]
-            cv2.rectangle(img_2, left_top, left_top + (roi_width, roi_height), color, 1)
-            cv2.putText(img_2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+            cv2.rectangle(img2, left_top, left_top + (roi_width, roi_height), color, 1)
+            cv2.putText(img2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, 1)
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_color, left_top, left_top + (roi_width, roi_height), color, 1)
             cv2.putText(mask_color, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        util.show(img)
-        util.show(img_2)
+        util.show(img2)
         util.show(mask_edge)
         util.show(mask_color)
-    if np.all(pattern == Grid.Empty.value):
+    if no_pattern:
         logger.debug(f'detection.preview: return=None')
         return None
     pattern = Pattern(pattern.reshape((h, w)))
@@ -589,20 +608,21 @@ def sp(img: np.ndarray, debug=False) -> Tuple[int, int]:
     his_sp = np.sum(his_ratios > SP_PIXEL_RATIO)
 
     if debug:
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        img2 = img.copy()
+        hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
         my_mask = cv2.inRange(hsv, MY_SPECIAL_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_COLOR_HSV_UPPER_BOUND)
         his_mask = cv2.inRange(hsv, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND)
         mask = np.maximum(my_mask, his_mask)
         mask = cv2.merge([mask, mask, mask])
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in my_rois])
         for k, left_top in enumerate(opencv_rois):
-            cv2.rectangle(img, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+            cv2.rectangle(img2, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in his_rois])
         for k, left_top in enumerate(opencv_rois):
-            cv2.rectangle(img, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
+            cv2.rectangle(img2, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
-        util.show(img)
+        util.show(img2)
         util.show(mask)
     logger.debug(f'detection.sp: return={my_sp, his_sp}')
     return my_sp, his_sp

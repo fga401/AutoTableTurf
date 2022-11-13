@@ -53,7 +53,7 @@ MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (0, 0, 0)
 GRID_PIXEL_RATIO = 0.6
 
 
-def hands(img, cursor=None, debug=False) -> List[Card]:
+def hands(img: np.ndarray, cursor=None, debug=False) -> List[Card]:
     def __grid_ratios(top_left: np.ndarray, lower_bound, upper_bound) -> List[Card]:
         roi = img[top_left[0]:top_left[0] + HANDS_GRID_ROI_HEIGHT, top_left[1]:top_left[1] + HANDS_GRID_ROI_WIDTH]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
@@ -86,6 +86,7 @@ def hands(img, cursor=None, debug=False) -> List[Card]:
     costs = np.sum(cost_ratios > GRID_PIXEL_RATIO, axis=1)
 
     if debug:
+        img2 = img.copy()
         grid_rois = np.array([util.numpy_to_opencv(idx) for grid in grid_rois for idx in grid]).reshape((4, 64, 2))
         cost_rois = np.array([util.numpy_to_opencv(idx) for grid in cost_rois for idx in grid]).reshape((4, 6, 2))
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -95,7 +96,7 @@ def hands(img, cursor=None, debug=False) -> List[Card]:
         mask = cv2.merge((mask, mask, mask))
         for i, grid in enumerate(grid_rois):
             for k, roi in enumerate(grid):
-                cv2.rectangle(img, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
+                cv2.rectangle(img2, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
                 if grid_ink_ratios[i][k] > GRID_PIXEL_RATIO:
@@ -106,10 +107,10 @@ def hands(img, cursor=None, debug=False) -> List[Card]:
                     cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
         for i, cost in enumerate(cost_rois):
             for k, roi in enumerate(cost):
-                cv2.rectangle(img, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
+                cv2.rectangle(img2, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.rint([-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
-        util.show(img)
+        util.show(img2)
         util.show(mask)
     cards = [Card(grids[i], costs[i]) for i in range(4)]
     logger.debug(f'detection.hands: return={cards}')

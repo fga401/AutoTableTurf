@@ -3,6 +3,7 @@ class Stats:
         self.win = 0
         self.battle = 0
         self.time = 0
+        self.start_time = 0
 
 
 class Result:

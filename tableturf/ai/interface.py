@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import List, Optional
 
-from tableturf.model import Status, Step
+from tableturf.model import Status, Step, Card, Stage
 
 
 class AI(ABC):
     @abstractmethod
-    def redraw(self, status: Status) -> bool:
+    def redraw(self, hands: List[Card], stage: Optional[Stage] = None, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> bool:
         raise NotImplementedError
 
     @abstractmethod
