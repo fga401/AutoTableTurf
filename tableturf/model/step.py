@@ -14,7 +14,7 @@ class Step:
 
     def __init__(self, action: Action, card: Card, rotate: Optional[int], pos: Optional[np.ndarray]):
         """
-        :param pos: (x, y)
+        :param pos: The numpy index, i.e. (y, x), of the first square of the rotated pattern.
         """
         self.__card = card
         self.__rotate = rotate if rotate is not None else None

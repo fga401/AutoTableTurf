@@ -9,7 +9,7 @@ from tableturf.manager.detection.ui import special_on
 from tableturf.model import Stage, Pattern, Grid
 
 BOUNDING_BOX_TOP_LEFT = np.array([0, 750])
-BOUNDING_BOX_WIDTH = 800
+BOUNDING_BOX_WIDTH = 850
 BOUNDING_BOX_HEIGHT = 1080
 
 CC_WIDTH_UPPER_BOUND = 45
@@ -206,8 +206,8 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
         mask[upper] = True
         return mask
 
-    # row_mask = __expand_mask(row_mask)
-    # col_mask = __expand_mask(col_mask)
+    row_mask = __expand_mask(row_mask)
+    col_mask = __expand_mask(col_mask)
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
 

@@ -25,9 +25,10 @@ class Status:
             result = set()
             result.add(Step(Step.Action.Skip, card, None, None))
             for idx in neighborhoods:
-                for origin in range(card.size):
-                    for rotate in range(4):
-                        pattern_indexes = card.get_pattern(rotate).offset + idx
+                for rotate in range(4):
+                    offset = card.get_pattern(rotate).offset
+                    for origin in range(card.size):
+                        pattern_indexes = offset - offset[origin] + idx
                         # pattern is out of boundary
                         xs = pattern_indexes[:, 0]
                         ys = pattern_indexes[:, 1]
@@ -36,7 +37,7 @@ class Status:
                         # squares are not empty
                         if not np.all(self.stage.grid[xs, ys] == Grid.Empty.value):
                             continue
-                        result.add(Step(Step.Action.Place, card, rotate, idx))
+                        result.add(Step(Step.Action.Place, card, rotate, pattern_indexes[0]))
             return result
 
         def possible_steps_with_special_attack(card: Card) -> Set[Step]:
@@ -44,9 +45,10 @@ class Status:
             if card.sp_cost > self.__my_sp:
                 return result
             for idx in sp_neighborhoods:
-                for origin in range(card.size):
-                    for rotate in range(4):
-                        pattern_indexes = card.get_pattern(rotate).offset + idx
+                for rotate in range(4):
+                    offset = card.get_pattern(rotate).offset
+                    for origin in range(card.size):
+                        pattern_indexes = offset - offset[origin] + idx
                         xs = pattern_indexes[:, 0]
                         ys = pattern_indexes[:, 1]
                         # pattern is out of boundary
@@ -56,7 +58,7 @@ class Status:
                         values = self.stage.grid[xs, ys]
                         if not np.all((values == Grid.Empty.value) | (values == Grid.MyInk.value) | (values == Grid.HisInk.value)):
                             continue
-                        result.add(Step(Step.Action.SpecialAttack, card, rotate, idx))
+                        result.add(Step(Step.Action.SpecialAttack, card, rotate, pattern_indexes[0]))
             return result
 
         self.__all_possible_steps_by_card = {
@@ -82,13 +84,24 @@ class Status:
 
     @property
     def my_deck(self) -> List[Card]:
+        """
+        Return remaining cards in my deck.
+        """
         return self.__my_deck
 
     @property
     def his_deck(self) -> List[Card]:
+        """
+        Return remaining cards in opponent's deck.
+        """
         return self.__his_deck
 
     def get_possible_steps(self, card: Optional[Card] = None) -> List[Step]:
+        """
+        Return all possible steps in the current status.
+
+        :param card: if not None, return possible steps of the given card.
+        """
         if card is None:
             return self.__all_possible_steps
         return self.__all_possible_steps_by_card[card]
