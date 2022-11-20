@@ -1,5 +1,6 @@
 import numpy as np
 
+from logger import logger
 from tableturf.model.grid import Grid
 
 
@@ -10,8 +11,16 @@ class Pattern:
         """
         if isinstance(grid[0][0], Grid):
             grid = np.vectorize(lambda x: x.value)(grid)
-        indexes = np.argwhere((grid == Grid.MyInk.value) | (grid == Grid.MySpecial.value))
-        self.__squares = grid[indexes[:, 0], indexes[:, 1]]
+        inks = grid != Grid.Empty.value
+        row_mask = np.any(inks, axis=1)
+        col_mask = np.any(inks, axis=0)
+        self.__grid = grid[row_mask][:, col_mask].copy()
+        if np.minimum(*self.__grid.shape) > 8:
+            logger.warn(f"Pattern width/height > 8. grid={self.__grid}")
+        self.__grid.setflags(write=False)
+
+        indexes = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
+        self.__squares = self.__grid[indexes[:, 0], indexes[:, 1]]
         self.__offsets = indexes - indexes[0][np.newaxis, ...]
         self.__size, _ = indexes.shape
 
@@ -36,6 +45,13 @@ class Pattern:
         """
         return self.__squares
 
+    @property
+    def grid(self) -> np.ndarray:
+        """
+        Trimmed grid.
+        """
+        return self.__grid
+
     def __hash__(self):
         return hash(str(self.__offsets))
 
@@ -45,11 +61,7 @@ class Pattern:
         return NotImplemented
 
     def __repr__(self):
-        h, w = np.max(self.__offsets, axis=0) - np.min(self.__offsets, axis=0) + (1, 1)
-        grid = np.zeros((h, w))
-        offset = self.__offsets - np.min(self.__offsets, axis=0)
-        grid[offset[:, 0], offset[:, 1]] = self.__squares
-        return str(grid)
+        return str(self.__grid)
 
     def __str__(self):
         return repr(self)

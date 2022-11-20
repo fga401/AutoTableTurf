@@ -3,7 +3,7 @@ from logger import logger
 from tableturf.manager.action import util
 
 
-def move_redraw_cursor_marco(target: int, current: int):
+def move_redraw_cursor_marco(target: int, current: int) -> str:
     logger.debug(f'action.move_redraw_cursor_marco: target={target}, current={current}')
     buttons = []
     if target > current:

@@ -436,7 +436,7 @@ PREVIEW_HIS_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
 ]
 
 
-def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False) -> Optional[Pattern]:
+def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False) -> Tuple[Optional[Pattern], Optional[np.ndarray]]:
     h, w, _ = rois.shape
     stage_grid = stage.grid.reshape((h * w))
     is_fiery = is_fiery.reshape((h * w))
@@ -542,8 +542,17 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
     no_pattern = np.all(pattern == Grid.Empty.value)
     if not no_pattern:
         pattern_mask = (pattern != Grid.Empty.value).astype(np.uint8)
-        _, labels, stats, _ = cv2.connectedComponentsWithStats(pattern_mask, connectivity=8)
+        _, labels, stats, centroids = cv2.connectedComponentsWithStats(pattern_mask, connectivity=8)
         target_label = np.argmax(stats[1:, 4]) + 1
+        max_size = stats[target_label, 4]
+        if max_size == 1:
+            indexes = centroids[1:, 1] * w + centroids[1:, 0]
+            in_wall = stage_grid[indexes] == Grid.Wall.value
+            if np.all(in_wall):
+                dist = np.power(centroids[1:] - (w // 2, h // 2), 2)
+                target_label = np.argmin(dist) + 1
+            else:
+                target_label = np.argwhere(np.bitwise_not(in_wall)) + 1
         pattern[np.bitwise_not(labels == target_label)] = Grid.Empty.value
 
     if debug:
@@ -577,10 +586,12 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         util.show(mask_color)
     if no_pattern:
         logger.debug(f'detection.preview: return=None')
-        return None
+        return None, None
+    pattern = pattern.reshape((h, w))
+    index = np.argwhere(pattern != Grid.Empty.value)[0]
     pattern = Pattern(pattern.reshape((h, w)))
-    logger.debug(f'detection.preview: return={pattern}')
-    return pattern
+    logger.debug(f'detection.preview: return={pattern, index}')
+    return pattern, index
 
 
 MY_SP_ROI_TOP_LEFTS = [(987, 61), (987, 231), (987, 399)]

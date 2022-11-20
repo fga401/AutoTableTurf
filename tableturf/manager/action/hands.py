@@ -3,12 +3,12 @@ from logger import logger
 from tableturf.manager.action import util
 
 
-def move_deck_cursor_marco(target: int, current: int) -> str:
-    logger.debug(f'action.move_deck_cursor_marco: target={target}, current={current}')
-    current_x = current // 8
-    current_y = current % 8
-    target_x = target // 8
-    target_y = target % 8
+def move_hands_cursor_marco(target: int, current: int) -> str:
+    logger.debug(f'action.move_hands_cursor_marco: target={target}, current={current}')
+    current_x = current % 2
+    current_y = current // 2
+    target_x = target % 2
+    target_y = target // 2
     buttons = []
     if current_x > target_x:
         buttons += [Controller.Button.DPAD_LEFT] * (current_x - target_x)

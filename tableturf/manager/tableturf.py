@@ -10,7 +10,7 @@ from tableturf.ai import AI
 from tableturf.manager import action
 from tableturf.manager import detection
 from tableturf.manager.data import Stats, Result
-from tableturf.model import Status, Card, Step, Stage
+from tableturf.model import Status, Card, Step, Stage, Grid
 
 
 class Exit:
@@ -45,25 +45,6 @@ class TableTurfManager:
 
         return wrapper
 
-    @staticmethod
-    def __multi_detect(detect_fn, merge_fn=None, times=3):
-        def wrapper():
-            results = [detect_fn() for _ in range(times)]
-            if merge_fn is not None:
-                return merge_fn(results)
-            return max(set(results), key=results.count)
-
-        return wrapper
-
-    @staticmethod
-    def __feedback(target, detect_fn, action_fn, max_times=5):
-        for _ in range(max_times):
-            current = detect_fn()
-            if current == target:
-                return
-            action_fn(target, current)
-        raise Exception('feedback loop reaches max_times')
-
     def __init__(self, capture: Capture, controller: Controller, ai: AI, closer: Exit = Exit(), debug=False):
         self.__capture = self.__resize(capture.capture)
         self.__controller = controller
@@ -85,7 +66,7 @@ class TableTurfManager:
             for round in range(15):
                 status = self.__get_status(my_deck, his_deck)
                 step = self.__ai.next_step(status)
-                self.__move(step)
+                self.__move(status, step)
                 sleep(10)
             sleep(10)
             result = self.__get_result()
@@ -93,15 +74,9 @@ class TableTurfManager:
             self.__close(self.__closer.exit(self.stats))
 
     def __select_deck(self, deck: int) -> List[Card]:
-        def deck_cursor() -> int:
-            img = self.__capture()
-            return detection.deck_cursor(img, debug=self.__debug)
-
-        def move_cursor(target: int, current: int):
-            macro = action.move_deck_cursor_marco(target, current)
-            self.__controller.macro(macro)
-
-        self.__feedback(deck, deck_cursor, move_cursor)
+        target = detection.deck_cursor(self.__capture(), debug=self.__debug)
+        macro = action.move_deck_cursor_marco(target, deck)
+        self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
         return None
 
@@ -109,16 +84,9 @@ class TableTurfManager:
         hands = detection.hands(self.__capture(), debug=self.__debug)
         redraw = self.__ai.redraw(hands, stage, my_deck, his_deck)
         target = 1 if redraw else 0
-
-        def redraw_cursor() -> int:
-            img = self.__capture()
-            return detection.redraw_cursor(img, debug=self.__debug)
-
-        def move_cursor(target: int, current: int):
-            macro = action.move_redraw_cursor_marco(target, current)
-            self.__controller.macro(macro)
-
-        self.__feedback(target, redraw_cursor, move_cursor)
+        current = detection.redraw_cursor(self.__capture(), debug=self.__debug)
+        macro = action.move_redraw_cursor_marco(target, current)
+        self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
 
     def __init_roi(self):
@@ -128,17 +96,40 @@ class TableTurfManager:
         self.__session['roi_width'] = roi_width
         self.__session['roi_height'] = roi_height
         self.__session['last_stage'] = None
+        self.__session['last_is_fiery'] = None
 
     def __get_status(self, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
         img = self.__capture()
         rois, roi_width, roi_height, last_stage = self.__session['rois'], self.__session['roi_width'], self.__session['roi_height'], self.__session['last_stage']
-        stage = detection.stage(img, rois, roi_width, roi_height, last_stage, debug=self.__debug)
+        stage, is_fiery = detection.stage(img, rois, roi_width, roi_height, last_stage, debug=self.__debug)
+        self.__session['last_stage'], self.__session['last_is_fiery'] = stage, is_fiery
         hands = detection.hands(img, debug=self.__debug)
         my_sp, his_sp = detection.sp(img, debug=self.__debug)
         return Status(stage, hands, my_sp, his_sp, my_deck, his_deck)
 
-    def __move(self, step: Step):
-        pass
+    def __move_hands_cursor(self, target):
+        current = detection.redraw_cursor(self.__capture(), debug=self.__debug)
+        macro = action.move_hands_cursor_marco(target, current)
+        self.__controller.macro(macro)
+
+    def __move(self, status: Status, step: Step):
+        if step.Action == step.Action.Skip:
+            self.__move_hands_cursor(5)
+            self.__controller.press_buttons([Controller.Button.A])
+            self.__move_hands_cursor(status.hands.index(step.card))
+            self.__controller.press_buttons([Controller.Button.A])
+            return
+
+        if step.Action == step.Action.SpecialAttack:
+            self.__move_hands_cursor(5)
+            self.__controller.press_buttons([Controller.Button.A])
+        self.__move_hands_cursor(status.hands.index(step.card))
+        if step.rotate > 0:
+            self.__controller.macro(action.rotate_card_marco(step.rotate))
+        preview, current_index = detection.preview(self.__capture(), status.stage, self.__session['last_is_fiery'], self.__session['rois'], self.__session['roi_width'], self.__session['roi_height'], self.__debug)
+        macro = action.move_card_marco(current_index, preview, status.stage, step)
+        self.__controller.macro(macro)
+        self.__controller.press_buttons([Controller.Button.A])
 
     def __get_result(self) -> Result:
         # TODO
@@ -154,14 +145,7 @@ class TableTurfManager:
 
     def __close(self, close: bool):
         target = 1 if close else 0
-
-        def replay_cursor() -> int:
-            img = self.__capture()
-            return detection.replay_cursor(img, debug=self.__debug)
-
-        def move_cursor(target: int, current: int):
-            macro = action.move_replay_cursor_marco(target, current)
-            self.__controller.macro(macro)
-
-        self.__feedback(target, replay_cursor, move_cursor)
+        current = detection.replay_cursor(self.__capture(), debug=self.__debug)
+        macro = action.move_replay_cursor_marco(target, current)
+        self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
