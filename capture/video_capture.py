@@ -11,6 +11,7 @@ class VideoCapture(Capture):
 
         :param device_idx: Camera index.
         """
+        print(11)
         self.__cam = cv2.VideoCapture(device_idx)
 
     @property
@@ -39,3 +40,6 @@ class VideoCapture(Capture):
         if not ret:
             raise Exception('failed to grab frame')
         return frame
+
+    def close(self):
+        self.__cam.release()

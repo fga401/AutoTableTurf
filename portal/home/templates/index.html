@@ -1,0 +1,28 @@
+<!doctype html>
+<script>
+    function sourceOnChange(selectObject) {
+        const params = {
+            source: selectObject.value,
+        };
+        const options = {
+            method: 'POST',
+            body: JSON.stringify(params),
+            headers: {
+              'Content-Type': 'application/json'
+            },
+        };
+        fetch('{{ url_for('home.source_on_change') }}', options)
+    }
+</script>
+<body>
+<label>Source: </label>
+<select name="sources" id="sources" onchange="sourceOnChange(this)">
+    {% for source in sources %}
+    <option value="{{source}}">{{source}}</option>
+    {% endfor %}
+</select>
+</body>
+<p></p>
+<body>
+<img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
+</body>
