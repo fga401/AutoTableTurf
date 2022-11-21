@@ -11,7 +11,6 @@ class VideoCapture(Capture):
 
         :param device_idx: Camera index.
         """
-        print(11)
         self.__cam = cv2.VideoCapture(device_idx)
 
     @property

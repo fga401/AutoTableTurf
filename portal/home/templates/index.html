@@ -1,5 +1,35 @@
 <!doctype html>
+<style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+</style>
 <script>
+    function keypress(event) {
+        const params = {
+            key: event.key,
+            type: event.type,
+        };
+        const options = {
+            method: 'POST',
+            body: JSON.stringify(params),
+            headers: {
+              'Content-Type': 'application/json'
+            },
+        };
+        fetch('{{ url_for('home.key_press') }}', options)
+    }
+
+    document.addEventListener('keyup', (e) => {
+      console.log('keyup', e.code)
+      keypress(e)
+    });
+    document.addEventListener('keydown', (e) => {
+      console.log('keydown', e.code, e)
+      keypress(e)
+    });
+
     function sourceOnChange(selectObject) {
         const params = {
             source: selectObject.value,
@@ -11,7 +41,7 @@
               'Content-Type': 'application/json'
             },
         };
-        fetch('{{ url_for('home.source_on_change') }}', options)
+        fetch('{{ url_for('home.change_source') }}', options)
     }
 </script>
 <body>
@@ -26,3 +56,16 @@
 <body>
 <img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
 </body>
+<p></p>
+<table>
+    <tr>
+        <th>Keyboard</th>
+        <th>Controller</th>
+    </tr>
+    {% for k, v in keymap.items() %}
+    <tr>
+        <th>{{k}}</th>
+        <th>{{v}}</th>
+    </tr>
+    {% endfor %}
+</table>
