@@ -26,7 +26,7 @@ table, th, td {
       keypress(e)
     });
     document.addEventListener('keydown', (e) => {
-      console.log('keydown', e.code, e)
+      console.log('keydown', e.code)
       keypress(e)
     });
 
@@ -43,7 +43,16 @@ table, th, td {
         };
         fetch('{{ url_for('home.change_source') }}', options)
     }
+
+    function runOnClick() {
+        const options = {
+            method: 'POST',
+        };
+        fetch('{{ url_for('home.run') }}', options)
+    }
 </script>
+<button onclick="runOnClick()">Run</button>
+<p></p>
 <body>
 <label>Source: </label>
 <select name="sources" id="sources" onchange="sourceOnChange(this)">

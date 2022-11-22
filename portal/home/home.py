@@ -7,6 +7,8 @@ from capture import VideoCapture
 from controller import DummyController, Controller
 from logger import logger
 from portal.home.keymap import keymap
+from tableturf.ai import SimpleAI
+from tableturf.manager import TableTurfManager, Exit
 
 
 def list_available_source():
@@ -39,6 +41,18 @@ def main():
         keymap=keymap
     ))
 
+def run():
+    logger.debug(f'portal.home.run')
+    ai = SimpleAI()
+    manager = TableTurfManager(
+        capture,
+        controller,
+        ai,
+        Exit(max_battle=1),
+        debug=True,
+    )
+    manager.run(deck=0)
+    return Response()
 
 def change_source():
     global capture
