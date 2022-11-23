@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from logger import logger
+from tableturf.debugger.interface import Debugger
 from tableturf.manager.detection import util
 from tableturf.manager.detection.ui import special_on
 from tableturf.model import Stage, Pattern, Grid
@@ -165,7 +166,7 @@ def _spawn_roi_centers(centers, width_step, height_step):
     return np.rint(grid.mean(axis=2)).astype(int) + BOUNDING_BOX_TOP_LEFT
 
 
-def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
+def stage_rois(img: np.ndarray, debug: Optional[Debugger] = None) -> (np.ndarray, int, int):
     """
     :return: top_lefts, roi_width, roi_height
     """
@@ -225,8 +226,8 @@ def stage_rois(img: np.ndarray, debug=False) -> (np.ndarray, int, int):
         for roi in rois:
             roi = util.numpy_to_opencv(roi)
             cv2.rectangle(img_mask, roi, roi + (roi_width, roi_height), (255, 255, 255), 1)
-        util.show(img)
-        util.show(img_mask)
+        debug.show('color_mask', colorful_mask)
+        debug.show('edge_mask', img_mask)
 
     logger.debug(f'detection.stage_rois: return={rois, roi_width, roi_height}')
     return rois, roi_width, roi_height
@@ -262,7 +263,7 @@ DEBUG_COLOR = {
 }
 
 
-def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: Optional[Stage] = None, debug=False) -> (Stage, np.ndarray):
+def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: Optional[Stage] = None, debug: Optional[Debugger] = None) -> (Stage, np.ndarray):
     """
     :param rois: (h, w, 2), rois[i][j] = (y, x)
     :return: stage and is_fiery
@@ -357,9 +358,9 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
             cv2.putText(img2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, thickness)
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        util.show(img2)
-        util.show(mask_edge)
-        # util.show(mask_color)
+        debug.show('image', img2)
+        debug.show('edge_mask', mask_edge)
+        # debug.show('color_mask', mask_color)
 
     stage = stage.reshape((h, w))
     is_fiery = is_fiery.reshape((h, w))
@@ -436,7 +437,7 @@ PREVIEW_HIS_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
 ]
 
 
-def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug=False) -> Tuple[Optional[Pattern], Optional[np.ndarray]]:
+def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug: Optional[Debugger] = None) -> Tuple[Optional[Pattern], Optional[np.ndarray]]:
     h, w, _ = rois.shape
     stage_grid = stage.grid.reshape((h * w))
     is_fiery = is_fiery.reshape((h * w))
@@ -581,9 +582,9 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_color, left_top, left_top + (roi_width, roi_height), color, 1)
             cv2.putText(mask_color, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        util.show(img2)
-        util.show(mask_edge)
-        util.show(mask_color)
+        debug.show('image', img2)
+        debug.show('edge_mask', mask_edge)
+        debug.show('color_mask', mask_color)
     if no_pattern:
         logger.debug(f'detection.preview: return=None')
         return None, None
@@ -603,7 +604,7 @@ HIS_SP_ROI_WIDTH_STEP = 25
 SP_PIXEL_RATIO = 0.4
 
 
-def sp(img: np.ndarray, debug=False) -> Tuple[int, int]:
+def sp(img: np.ndarray, debug: Optional[Debugger] = None) -> Tuple[int, int]:
     my_rois = np.concatenate([util.grid_roi_top_lefts(toe_left, width=5, height=1, width_step=MY_SP_ROI_WIDTH_STEP, height_step=0, width_offset=0, height_offset=0).squeeze() for toe_left in MY_SP_ROI_TOP_LEFTS])
     his_rois = np.concatenate([util.grid_roi_top_lefts(toe_left, width=5, height=1, width_step=HIS_SP_ROI_WIDTH_STEP, height_step=0, width_offset=0, height_offset=0).squeeze() for toe_left in HIS_SP_ROI_TOP_LEFTS])
 
@@ -633,7 +634,7 @@ def sp(img: np.ndarray, debug=False) -> Tuple[int, int]:
         for k, left_top in enumerate(opencv_rois):
             cv2.rectangle(img2, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
-        util.show(img2)
-        util.show(mask)
+        debug.show('image', img2)
+        debug.show('color_mask', mask)
     logger.debug(f'detection.sp: return={my_sp, his_sp}')
     return my_sp, his_sp

@@ -1,6 +1,9 @@
+from typing import Optional
+
 import numpy as np
 
 from logger import logger
+from tableturf.debugger.interface import Debugger
 from tableturf.manager.detection import util
 
 DECK_CURSOR_ROI_TOP_LEFT = np.array([285, 450])
@@ -15,7 +18,7 @@ DECK_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 DECK_CURSOR_PIXEL_RATIO = 0.4
 
 
-def deck_cursor(img, debug=False) -> int:
+def deck_cursor(img, debug: Optional[Debugger] = None) -> int:
     pos = util.detect_cursor(
         img,
         DECK_CURSOR_NUMPY_ROI_TOP_LEFTS,
@@ -38,7 +41,7 @@ HANDS_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 HANDS_CURSOR_PIXEL_RATIO = 0.3
 
 
-def hands_cursor(img: np.ndarray, debug=False) -> int:
+def hands_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
     pos = util.detect_cursor(
         img,
         HANDS_CURSOR_NUMPY_ROI_TOP_LEFTS,
@@ -61,7 +64,7 @@ REDRAW_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 REDRAW_CURSOR_PIXEL_RATIO = 0.5
 
 
-def redraw_cursor(img: np.ndarray, debug=False) -> int:
+def redraw_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
     pos = util.detect_cursor(
         img,
         REDRAW_CURSOR_NUMPY_ROI_TOP_LEFTS,
@@ -84,7 +87,7 @@ SPECIAL_ON_CURSOR_COLOR_HSV_LOWER_BOUND = (70, 0, 100)
 SPECIAL_ON_CURSOR_PIXEL_RATIO = 0.5
 
 
-def special_on(img: np.ndarray, debug=False) -> bool:
+def special_on(img: np.ndarray, debug: Optional[Debugger] = None) -> bool:
     result = util.detect_cursor(
         img,
         SPECIAL_ON_CURSOR_NUMPY_ROI_TOP_LEFTS,
@@ -107,7 +110,7 @@ REPLAY_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 REPLAY_CURSOR_PIXEL_RATIO = 0.5
 
 
-def replay_cursor(img: np.ndarray, debug=False) -> int:
+def replay_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
     pos = util.detect_cursor(
         img,
         REPLAY_CURSOR_NUMPY_ROI_TOP_LEFTS,

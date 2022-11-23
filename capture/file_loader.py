@@ -25,3 +25,6 @@ class FileLoader(Capture):
         frame = cv2.imread(self.__files[self.__idx])
         self.__idx = (self.__idx + 1) % len(self.__files)
         return frame
+
+    def close(self):
+        return

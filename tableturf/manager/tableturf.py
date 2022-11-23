@@ -7,10 +7,11 @@ import cv2
 from capture import Capture
 from controller import Controller
 from tableturf.ai import AI
+from tableturf.debugger.interface import Debugger
 from tableturf.manager import action
 from tableturf.manager import detection
 from tableturf.manager.data import Stats, Result
-from tableturf.model import Status, Card, Step, Stage, Grid
+from tableturf.model import Status, Card, Step, Stage
 
 
 class Exit:
@@ -45,7 +46,7 @@ class TableTurfManager:
 
         return wrapper
 
-    def __init__(self, capture: Capture, controller: Controller, ai: AI, closer: Exit = Exit(), debug=False):
+    def __init__(self, capture: Capture, controller: Controller, ai: AI, closer: Exit = Exit(), debug: Optional[Debugger] = None):
         self.__capture = self.__resize(capture.capture)
         self.__controller = controller
         self.__ai = ai
@@ -76,7 +77,8 @@ class TableTurfManager:
     def __select_deck(self, deck: int) -> List[Card]:
         target = detection.deck_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_deck_cursor_marco(target, deck)
-        self.__controller.macro(macro)
+        if macro.strip() != '':
+            self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
         return None
 
@@ -86,7 +88,8 @@ class TableTurfManager:
         target = 1 if redraw else 0
         current = detection.redraw_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_redraw_cursor_marco(target, current)
-        self.__controller.macro(macro)
+        if macro.strip() != '':
+            self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
 
     def __init_roi(self):
@@ -110,7 +113,8 @@ class TableTurfManager:
     def __move_hands_cursor(self, target):
         current = detection.redraw_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_hands_cursor_marco(target, current)
-        self.__controller.macro(macro)
+        if macro.strip() != '':
+            self.__controller.macro(macro)
 
     def __move(self, status: Status, step: Step):
         if step.Action == step.Action.Skip:
@@ -125,10 +129,13 @@ class TableTurfManager:
             self.__controller.press_buttons([Controller.Button.A])
         self.__move_hands_cursor(status.hands.index(step.card))
         if step.rotate > 0:
-            self.__controller.macro(action.rotate_card_marco(step.rotate))
+            macro = action.rotate_card_marco(step)
+            if macro.strip() != '':
+                self.__controller.macro(macro)
         preview, current_index = detection.preview(self.__capture(), status.stage, self.__session['last_is_fiery'], self.__session['rois'], self.__session['roi_width'], self.__session['roi_height'], self.__debug)
         macro = action.move_card_marco(current_index, preview, status.stage, step)
-        self.__controller.macro(macro)
+        if macro.strip() != '':
+            self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
 
     def __get_result(self) -> Result:
@@ -147,5 +154,6 @@ class TableTurfManager:
         target = 1 if close else 0
         current = detection.replay_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_replay_cursor_marco(target, current)
-        self.__controller.macro(macro)
+        if macro.strip() != '':
+            self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])

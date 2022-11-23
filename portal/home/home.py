@@ -1,11 +1,14 @@
 import io
 
 import cv2
+import numpy as np
 from flask import Response, request, render_template
 
 from capture import VideoCapture
 from controller import DummyController, Controller
 from logger import logger
+from portal.debug.debugger import web_debugger
+from portal.home.capture import ThreadSafeCapture
 from portal.home.keymap import keymap
 from tableturf.ai import SimpleAI
 from tableturf.manager import TableTurfManager, Exit
@@ -26,20 +29,21 @@ def list_available_source():
 
 
 available_sources = list_available_source()
-capture = VideoCapture(0)
+capture = ThreadSafeCapture(VideoCapture(0))
+
 controller = DummyController()
-empty_buf = io.BytesIO().getbuffer()
 
 
 def main():
     global available_sources
     available_sources = list_available_source()
     return Response(render_template(
-        'index.html',
+        'home.html',
         url=request.url,
         sources=available_sources,
         keymap=keymap
     ))
+
 
 def run():
     logger.debug(f'portal.home.run')
@@ -49,31 +53,32 @@ def run():
         controller,
         ai,
         Exit(max_battle=1),
-        debug=True,
+        debug=web_debugger,
     )
     manager.run(deck=0)
     return Response()
 
+
 def change_source():
     global capture
-    capture.close()
-    source = request.json['source']
-    capture = VideoCapture(source)
+    source = int(request.json['source'])
+    capture.update_capture(VideoCapture(source))
     logger.debug(f'portal.home.source_on_change: source={source}')
     return Response()
 
 
 def generate_frames():
+    empty = np.zeros((1080, 1920, 3))
+    _, empty_buf = cv2.imencode(".jpeg", empty)
+    empty_frame = bytes(io.BytesIO(empty_buf).getbuffer())
     while True:
         try:
             img = capture.capture()
             _, buffer = cv2.imencode(".jpeg", img)
-            buf = io.BytesIO(buffer)
-            frame = buf.getbuffer()
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        except Exception as e:
-            # TODO: fix this
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + empty_buf + b'\r\n')
+            frame = bytes(io.BytesIO(buffer).getbuffer())
+            yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+        except Exception:
+            yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + empty_frame + b'\r\n'
 
 
 def video_feed():

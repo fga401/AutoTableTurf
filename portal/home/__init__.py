@@ -1,7 +1,8 @@
 from flask import Blueprint
+
 from portal.home.home import main, change_source, video_feed, key_press, run
 
-home = Blueprint('home', __name__, template_folder='templates')
+home = Blueprint('home', __name__, template_folder='templates', url_prefix='/home')
 home.route('/')(main)
 home.route('/source', methods=['POST'])(change_source)
 home.route('/video_feed')(video_feed)

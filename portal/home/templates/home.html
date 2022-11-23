@@ -4,6 +4,9 @@ table, th, td {
   border: 1px solid black;
   border-collapse: collapse;
 }
+
+
+
 </style>
 <script>
     function keypress(event) {
@@ -50,6 +53,9 @@ table, th, td {
         };
         fetch('{{ url_for('home.run') }}', options)
     }
+
+
+
 </script>
 <button onclick="runOnClick()">Run</button>
 <p></p>

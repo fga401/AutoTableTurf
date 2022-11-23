@@ -1,24 +1,9 @@
+from typing import Optional
+
 import cv2
 import numpy as np
 
-from logger import logger
-
-
-def show(img: np.ndarray, callback=None, override_callback=False):
-    def __print_debug_info(event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            bgr = img[y:y + 1, x:x + 1]
-            hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-            logger.debug(f'detection.debug: x={x}, y={y}, BGR={bgr.squeeze()}, HSV={hsv.squeeze()}')
-        if callback is not None:
-            callback(event, x, y, flags, param)
-
-    cv2.imshow("debug", img)
-    cv2.setMouseCallback('debug', __print_debug_info)
-    if override_callback:
-        cv2.setMouseCallback('debug', callback)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+from tableturf.debugger.interface import Debugger
 
 
 def numpy_to_opencv(idx: np.ndarray) -> np.ndarray:
@@ -33,7 +18,7 @@ def grid_roi_top_lefts(top_left, width, height, width_step, height_step, width_o
     return np.array([(top_left[0] + np.round(height_step * h) + np.round(height_offset * w), top_left[1] + np.round(width_step * w) + np.round(width_offset * h)) for h in range(height) for w in range(width)]).astype(int).reshape((height, width, 2))
 
 
-def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug=True):
+def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug: Optional[Debugger] = None):
     def __cursor_ratio(top_left: np.ndarray) -> float:
         # print(classify_color(img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width], k=2))
         roi = img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width]
@@ -57,8 +42,8 @@ def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hs
             font_size = np.min((width, height)) / 40
             cv2.putText(mask, f'{ratios[i]:.3}', roi + (0, -5), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 255), 1)
             cv2.putText(mask, f'{i}', roi + np.rint([width / 10, height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 255, 0), 1)
-        show(img2)
-        show(mask)
+        debug.show('image', img2)
+        debug.show('color_mask', mask)
     return pos
 
 

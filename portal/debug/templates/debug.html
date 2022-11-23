@@ -1,0 +1,9 @@
+<!doctype html>
+<body>
+<label>Pages:</label>
+<ul>
+    {% for page in pages %}
+    <li><a href="{{ url_for('debug.page', name=page) }}">{{page}}</a></li>
+    {% endfor %}
+</ul>
+</body>

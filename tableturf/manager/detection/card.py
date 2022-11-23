@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, Optional
 
 import cv2
 import numpy as np
 
 from logger import logger
+from tableturf.debugger.interface import Debugger
 from tableturf.manager.detection import util
 from tableturf.manager.detection.ui import hands_cursor
 from tableturf.model import Card, Grid
@@ -53,7 +54,7 @@ MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (0, 0, 0)
 GRID_PIXEL_RATIO = 0.6
 
 
-def hands(img: np.ndarray, cursor=None, debug=False) -> List[Card]:
+def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> List[Card]:
     def __grid_ratios(top_left: np.ndarray, lower_bound, upper_bound) -> List[Card]:
         roi = img[top_left[0]:top_left[0] + HANDS_GRID_ROI_HEIGHT, top_left[1]:top_left[1] + HANDS_GRID_ROI_WIDTH]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
@@ -110,8 +111,8 @@ def hands(img: np.ndarray, cursor=None, debug=False) -> List[Card]:
                 cv2.rectangle(img2, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.rint([-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
-        util.show(img2)
-        util.show(mask)
+        debug.show('image', img2)
+        debug.show('color_mask', mask)
     cards = [Card(grids[i], costs[i]) for i in range(4)]
     logger.debug(f'detection.hands: return={cards}')
     return cards
