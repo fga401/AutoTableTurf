@@ -15,8 +15,13 @@ class TestCard(unittest.TestCase):
         for _ in range(10):
             detection.hands_cursor(capture.capture(), OpenCVDebugger())
 
-    def test_hands_in_battle(self):
+    def test_hands_in_battle_1(self):
         capture = FileLoader(path=os.path.join(path, 'stage2'))
+        for _ in range(10):
+            detection.hands(capture.capture(), None, OpenCVDebugger())
+
+    def test_hands_in_battle_2(self):
+        capture = FileLoader(path=os.path.join(path, 'card'))
         for _ in range(10):
             detection.hands(capture.capture(), None, OpenCVDebugger())
 

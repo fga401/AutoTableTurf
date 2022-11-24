@@ -15,7 +15,6 @@ class WebDebugger(Debugger):
         self.__buffers = dict()
 
     def show(self, name: str, img: np.ndarray):
-        print('show')
         _, buffer = cv2.imencode(".jpeg", img)
         buf = io.BytesIO(buffer)
         self.__buffers[name] = buf

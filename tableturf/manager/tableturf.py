@@ -58,25 +58,26 @@ class TableTurfManager:
     def run(self, deck: int, his_deck: Optional[List[Card]] = None):
         self.stats.start_time = datetime.now().timestamp()
         while True:
-            sleep(10)
+            sleep(5)
             my_deck = self.__select_deck(deck)
             sleep(10)
             self.__redraw(my_deck=my_deck)
-            sleep(10)
+            sleep(5)
             self.__init_roi()
-            for round in range(15):
+            for round in range(12):
                 status = self.__get_status(my_deck, his_deck)
                 step = self.__ai.next_step(status)
                 self.__move(status, step)
                 sleep(10)
-            sleep(10)
+            sleep(5)
             result = self.__get_result()
             self.__update_stats(result)
             self.__close(self.__closer.exit(self.stats))
 
     def __select_deck(self, deck: int) -> List[Card]:
-        target = detection.deck_cursor(self.__capture(), debug=self.__debug)
-        macro = action.move_deck_cursor_marco(target, deck)
+        target = deck
+        current = detection.deck_cursor(self.__capture(), debug=self.__debug)
+        macro = action.move_deck_cursor_marco(target, current)
         if macro.strip() != '':
             self.__controller.macro(macro)
         self.__controller.press_buttons([Controller.Button.A])
@@ -111,7 +112,7 @@ class TableTurfManager:
         return Status(stage, hands, my_sp, his_sp, my_deck, his_deck)
 
     def __move_hands_cursor(self, target):
-        current = detection.redraw_cursor(self.__capture(), debug=self.__debug)
+        current = detection.hands_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_hands_cursor_marco(target, current)
         if macro.strip() != '':
             self.__controller.macro(macro)
@@ -128,6 +129,7 @@ class TableTurfManager:
             self.__move_hands_cursor(5)
             self.__controller.press_buttons([Controller.Button.A])
         self.__move_hands_cursor(status.hands.index(step.card))
+        self.__controller.press_buttons([Controller.Button.A])
         if step.rotate > 0:
             macro = action.rotate_card_marco(step)
             if macro.strip() != '':

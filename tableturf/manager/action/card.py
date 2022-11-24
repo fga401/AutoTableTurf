@@ -50,5 +50,5 @@ def move_card_marco(current: np.ndarray, preview: Pattern, stage: Stage, step: S
     if row_first_wall_count < col_first_wall_count:
         buttons = buttons_x + buttons_y
     else:
-        buttons = buttons_y + buttons_y
+        buttons = buttons_y + buttons_x
     return util.buttons_to_marco(buttons)

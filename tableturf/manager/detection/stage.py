@@ -213,7 +213,7 @@ def stage_rois(img: np.ndarray, debug: Optional[Debugger] = None) -> (np.ndarray
     rois = rois[row_mask][:, col_mask]
 
     if debug:
-        rois = rois.reshape(-1, 2)
+        _rois = rois.reshape(-1, 2)
         roi_centers = roi_centers.reshape(-1, 2)
         colorful_mask = cv2.merge((roi_labels * 53 % 255, roi_labels * 101 % 255, roi_labels * 151 % 255))
         img_mask = np.zeros_like(img)
@@ -223,7 +223,7 @@ def stage_rois(img: np.ndarray, debug: Optional[Debugger] = None) -> (np.ndarray
         for center in roi_centers:
             center = util.numpy_to_opencv(center)
             cv2.circle(img_mask, np.rint(center).astype(int), 2, (0, 0, 255), 3)
-        for roi in rois:
+        for roi in _rois:
             roi = util.numpy_to_opencv(roi)
             cv2.rectangle(img_mask, roi, roi + (roi_width, roi_height), (255, 255, 255), 1)
         debug.show('color_mask', colorful_mask)
