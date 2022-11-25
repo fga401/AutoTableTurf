@@ -118,8 +118,8 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
                 cv2.rectangle(img2, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.rint([-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
-        debug.show('image', img2)
-        debug.show('color_mask', mask)
+        debug.show('hands.image', img2)
+        debug.show('hands.color_mask', mask)
     cards = [Card(grids[i], costs[i]) for i in range(4)]
     logger.debug(f'detection.hands: return={cards}')
     return cards

@@ -226,8 +226,8 @@ def stage_rois(img: np.ndarray, debug: Optional[Debugger] = None) -> (np.ndarray
         for roi in _rois:
             roi = util.numpy_to_opencv(roi)
             cv2.rectangle(img_mask, roi, roi + (roi_width, roi_height), (255, 255, 255), 1)
-        debug.show('color_mask', colorful_mask)
-        debug.show('edge_mask', img_mask)
+        debug.show('stage_rois.color_mask', colorful_mask)
+        debug.show('stage_rois.edge_mask', img_mask)
 
     logger.debug(f'detection.stage_rois: return={rois, roi_width, roi_height}')
     return rois, roi_width, roi_height
@@ -358,8 +358,8 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
             cv2.putText(img2, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_edge, left_top, left_top + (roi_width, roi_height), color, thickness)
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        debug.show('image', img2)
-        debug.show('edge_mask', mask_edge)
+        debug.show('stage.image', img2)
+        debug.show('stage.edge_mask', mask_edge)
         # debug.show('color_mask', mask_color)
 
     stage = stage.reshape((h, w))
@@ -582,9 +582,9 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
             cv2.putText(mask_edge, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
             cv2.rectangle(mask_color, left_top, left_top + (roi_width, roi_height), color, 1)
             cv2.putText(mask_color, f'{k}', left_top + np.rint([roi_width / 10, roi_height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
-        debug.show('image', img2)
-        debug.show('edge_mask', mask_edge)
-        debug.show('color_mask', mask_color)
+        debug.show('preview.image', img2)
+        debug.show('preview.edge_mask', mask_edge)
+        debug.show('preview.color_mask', mask_color)
     if no_pattern:
         logger.debug(f'detection.preview: return=None')
         return None, None
@@ -634,7 +634,7 @@ def sp(img: np.ndarray, debug: Optional[Debugger] = None) -> Tuple[int, int]:
         for k, left_top in enumerate(opencv_rois):
             cv2.rectangle(img2, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
             cv2.rectangle(mask, left_top, left_top + (SP_ROI_WIDTH, SP_ROI_HEIGHT), (0, 255, 0), 1)
-        debug.show('image', img2)
-        debug.show('color_mask', mask)
+        debug.show('sp.image', img2)
+        debug.show('sp.color_mask', mask)
     logger.debug(f'detection.sp: return={my_sp, his_sp}')
     return my_sp, his_sp

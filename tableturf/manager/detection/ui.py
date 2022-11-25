@@ -28,6 +28,7 @@ def deck_cursor(img, debug: Optional[Debugger] = None) -> int:
         DECK_CURSOR_COLOR_HSV_UPPER_BOUND,
         DECK_CURSOR_PIXEL_RATIO,
         debug,
+        'deck_cursor'
     )
     logger.debug(f'detection.deck_cursor: return={pos}')
     return pos
@@ -51,6 +52,7 @@ def hands_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
         HANDS_CURSOR_COLOR_HSV_UPPER_BOUND,
         HANDS_CURSOR_PIXEL_RATIO,
         debug,
+        'hands_cursor'
     )
     logger.debug(f'detection.hands_cursor: return={pos}')
     return pos
@@ -74,6 +76,7 @@ def redraw_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
         REDRAW_CURSOR_COLOR_HSV_UPPER_BOUND,
         REDRAW_CURSOR_PIXEL_RATIO,
         debug,
+        'redraw_cursor'
     )
     logger.debug(f'detection.redraw_cursor: return={pos}')
     return pos
@@ -97,6 +100,7 @@ def special_on(img: np.ndarray, debug: Optional[Debugger] = None) -> bool:
         SPECIAL_ON_CURSOR_COLOR_HSV_UPPER_BOUND,
         SPECIAL_ON_CURSOR_PIXEL_RATIO,
         debug,
+        'special_on'
     ) != -1
     logger.debug(f'detection.special_on: return={result}')
     return result
@@ -120,6 +124,7 @@ def replay_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
         REPLAY_CURSOR_COLOR_HSV_UPPER_BOUND,
         REPLAY_CURSOR_PIXEL_RATIO,
         debug,
+        'replay_cursor'
     )
     logger.debug(f'detection.replay_cursor: return={pos}')
     return pos

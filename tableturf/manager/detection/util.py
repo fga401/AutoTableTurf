@@ -18,7 +18,7 @@ def grid_roi_top_lefts(top_left, width, height, width_step, height_step, width_o
     return np.array([(top_left[0] + np.round(height_step * h) + np.round(height_offset * w), top_left[1] + np.round(width_step * w) + np.round(width_offset * h)) for h in range(height) for w in range(width)]).astype(int).reshape((height, width, 2))
 
 
-def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug: Optional[Debugger] = None):
+def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hsv_upper_bound, threshold, debug: Optional[Debugger] = None, debug_prefix: str = ''):
     def __cursor_ratio(top_left: np.ndarray) -> float:
         # print(classify_color(img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width], k=2))
         roi = img[top_left[0]:top_left[0] + height, top_left[1]:top_left[1] + width]
@@ -42,8 +42,8 @@ def detect_cursor(img: np.ndarray, top_lefts, width, height, hsv_lower_bound, hs
             font_size = np.min((width, height)) / 40
             cv2.putText(mask, f'{ratios[i]:.3}', roi + (0, -5), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 255), 1)
             cv2.putText(mask, f'{i}', roi + np.rint([width / 10, height / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 255, 0), 1)
-        debug.show('image', img2)
-        debug.show('color_mask', mask)
+        debug.show(f'{debug_prefix}.image', img2)
+        debug.show(f'{debug_prefix}.color_mask', mask)
     return pos
 
 
