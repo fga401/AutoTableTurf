@@ -47,10 +47,10 @@ MY_INK_LIGHTER_COLOR_HSV_UPPER_BOUND = (35, 255, 255)
 MY_INK_LIGHTER_COLOR_HSV_LOWER_BOUND = (30, 150, 150)
 MY_SPECIAL_LIGHTER_COLOR_HSV_UPPER_BOUND = (25, 255, 255)
 MY_SPECIAL_LIGHTER_COLOR_HSV_LOWER_BOUND = (20, 150, 150)
-MY_INK_DARKER_COLOR_HSV_UPPER_BOUND = (35, 255, 255)
-MY_INK_DARKER_COLOR_HSV_LOWER_BOUND = (25, 43, 43)
-MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND = (25, 255, 255)
-MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (0, 0, 0)
+MY_INK_DARKER_COLOR_HSV_UPPER_BOUND = (35, 255, 140)
+MY_INK_DARKER_COLOR_HSV_LOWER_BOUND = (27, 240, 100)
+MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND = (27, 255, 140)
+MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (15, 240, 100)
 GRID_PIXEL_RATIO = 0.6
 
 
@@ -73,16 +73,20 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
     special_lower_bound, special_upper_bound = MY_SPECIAL_LIGHTER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_LIGHTER_COLOR_HSV_UPPER_BOUND
     grid_ink_ratios = np.array([__grid_ratios(idx, ink_lower_bound, ink_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
     grid_special_ratios = np.array([__grid_ratios(idx, special_lower_bound, special_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
-    if grid_ink_ratios.max() < GRID_PIXEL_RATIO and grid_special_ratios.max() < GRID_PIXEL_RATIO:
-        ink_lower_bound, ink_upper_bound = MY_INK_DARKER_COLOR_HSV_LOWER_BOUND, MY_INK_DARKER_COLOR_HSV_UPPER_BOUND
-        special_lower_bound, special_upper_bound = MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND
-        grid_ink_ratios = np.array([__grid_ratios(idx, ink_lower_bound, ink_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
-        grid_special_ratios = np.array([__grid_ratios(idx, special_lower_bound, special_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
+    dark_ink_lower_bound, dark_ink_upper_bound = MY_INK_DARKER_COLOR_HSV_LOWER_BOUND, MY_INK_DARKER_COLOR_HSV_UPPER_BOUND
+    dark_special_lower_bound, dark_special_upper_bound = MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND
+    dark_grid_ink_ratios = np.array([__grid_ratios(idx, dark_ink_lower_bound, dark_ink_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
+    dark_grid_special_ratios = np.array([__grid_ratios(idx, dark_special_lower_bound, dark_special_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
+
     cost_ratios = np.array([__grid_ratios(idx, special_lower_bound, special_upper_bound) for grid in cost_rois for idx in grid]).reshape(4, 6)
+    dark_cost_ratios = np.array([__grid_ratios(idx, dark_special_lower_bound, dark_special_upper_bound) for grid in cost_rois for idx in grid]).reshape(4, 6)
+    cost_ratios = np.maximum(cost_ratios, dark_cost_ratios)
 
     grids = np.zeros((4, 64), dtype=int)
     grids[grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value
     grids[grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
+    grids[dark_grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value
+    grids[dark_grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
     grids = grids.reshape((4, 8, 8))
     costs = np.sum(cost_ratios > GRID_PIXEL_RATIO, axis=1)
 
@@ -93,7 +97,10 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         ink_mask = cv2.inRange(hsv, ink_lower_bound, ink_upper_bound)
         special_mask = cv2.inRange(hsv, special_lower_bound, special_upper_bound)
-        mask = np.maximum(ink_mask, special_mask)
+        dark_ink_mask = cv2.inRange(hsv, dark_ink_lower_bound, dark_ink_upper_bound)
+        dark_special_mask = cv2.inRange(hsv, dark_special_lower_bound, dark_special_upper_bound)
+        # mask = np.maximum(ink_mask, special_mask)
+        mask = np.max([ink_mask, special_mask, dark_ink_mask, dark_special_mask], axis=0)
         mask = cv2.merge((mask, mask, mask))
         for i, grid in enumerate(grid_rois):
             for k, roi in enumerate(grid):

@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from capture.interface import Capture
+from logger import logger
 
 
 class VideoCapture(Capture):
@@ -27,6 +28,13 @@ class VideoCapture(Capture):
         if not ret:
             raise Exception('failed to grab frame')
         cv2.imshow(name, frame)
+        def __print_debug_info(event, x, y, flags, param):
+            if event == cv2.EVENT_LBUTTONDOWN:
+                bgr = frame[y:y + 1, x:x + 1]
+                hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+                logger.debug(f'detection.debug: x={x}, y={y}, BGR={bgr.squeeze()}, HSV={hsv.squeeze()}')
+
+        cv2.setMouseCallback(name, __print_debug_info)
         cv2.waitKey()
         cv2.destroyAllWindows()
 
