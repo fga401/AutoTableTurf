@@ -118,14 +118,14 @@ class TableTurfManager:
             self.__controller.macro(macro)
 
     def __move(self, status: Status, step: Step):
-        if step.Action == step.Action.Skip:
-            self.__move_hands_cursor(5)
+        if step.action == step.Action.Skip:
+            self.__move_hands_cursor(4)
             self.__controller.press_buttons([Controller.Button.A])
             self.__move_hands_cursor(status.hands.index(step.card))
             self.__controller.press_buttons([Controller.Button.A])
             return
 
-        if step.Action == step.Action.SpecialAttack:
+        if step.action == step.Action.SpecialAttack:
             self.__move_hands_cursor(5)
             self.__controller.press_buttons([Controller.Button.A])
         self.__move_hands_cursor(status.hands.index(step.card))

@@ -28,9 +28,8 @@ def move_card_marco(current: np.ndarray, preview: Pattern, stage: Stage, step: S
         if actual_ink_pattern != expected_ink_pattern:
             logger.warn(f'action.move_card_marco: unmatch pattern')
             return ''
-        offset = preview.offset[1] if preview.squares[0] == Grid.MySpecial.value else preview.offset[0]
-        current = current + offset
-        target = target + offset
+        offset = expected_pattern.offset[1] if expected_pattern.squares[0] == Grid.MySpecial.value else expected_pattern.offset[0]
+        current = current - offset
     diff_y, diff_x = target - current
     if diff_x > 0:
         step_x = 1
