@@ -153,7 +153,9 @@ class TableTurfManager:
         self.stats.battle += 1
 
     def __close(self, close: bool):
-        target = 1 if close else 0
+        self.__controller.press_buttons([Controller.Button.A])
+        sleep(5)
+        target = 0 if close else 1
         current = detection.replay_cursor(self.__capture(), debug=self.__debug)
         macro = action.move_replay_cursor_marco(target, current)
         if macro.strip() != '':
