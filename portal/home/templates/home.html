@@ -5,8 +5,6 @@ table, th, td {
   border-collapse: collapse;
 }
 
-
-
 </style>
 <script>
     var connected = false;
@@ -87,7 +85,7 @@ table, th, td {
 <input type="url" id="controller_endpoint">
 <button onclick="connectOnClick()">Connect</button>
 <p></p>
-<label>Source: </label>
+<label>Screen Source: </label>
 <select name="sources" id="sources" onchange="sourceOnChange(this)">
     {% for source in sources %}
     <option value="{{source}}">{{source}}</option>

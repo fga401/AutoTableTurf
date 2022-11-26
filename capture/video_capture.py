@@ -28,6 +28,7 @@ class VideoCapture(Capture):
         if not ret:
             raise Exception('failed to grab frame')
         cv2.imshow(name, frame)
+
         def __print_debug_info(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 bgr = frame[y:y + 1, x:x + 1]

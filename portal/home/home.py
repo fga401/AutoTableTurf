@@ -50,7 +50,7 @@ def run():
     ai = SimpleAI()
     manager = TableTurfManager(
         capture,
-        controller,
+        controller if controller is not None else DummyController(),
         ai,
         Exit(max_battle=1),
         debug=web_debugger if debug else None,

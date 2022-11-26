@@ -6,6 +6,7 @@ import cv2
 
 from capture import Capture
 from controller import Controller
+from logger import logger
 from tableturf.ai import AI
 from tableturf.debugger.interface import Debugger
 from tableturf.manager import action
@@ -72,7 +73,10 @@ class TableTurfManager:
             sleep(5)
             result = self.__get_result()
             self.__update_stats(result)
-            self.__close(self.__closer.exit(self.stats))
+            close = self.__closer.exit(self.stats)
+            self.__close(close)
+            if close:
+                break
 
     def __select_deck(self, deck: int) -> List[Card]:
         target = deck
@@ -151,6 +155,7 @@ class TableTurfManager:
         now = datetime.now().timestamp()
         self.stats.time = now - self.stats.start_time
         self.stats.battle += 1
+        logger.debug(f'tableturf.update_stats: stats={self.stats}')
 
     def __close(self, close: bool):
         self.__controller.press_buttons([Controller.Button.A])
