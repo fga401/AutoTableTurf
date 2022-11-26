@@ -9,6 +9,8 @@ table, th, td {
 
 </style>
 <script>
+    var connected = false;
+
     function keypress(event) {
         const params = {
             key: event.key,
@@ -25,12 +27,16 @@ table, th, td {
     }
 
     document.addEventListener('keyup', (e) => {
-      console.log('keyup', e.code)
-      keypress(e)
+        if (!connected)
+            return;
+        console.log('keyup', e.code)
+        keypress(e)
     });
     document.addEventListener('keydown', (e) => {
-      console.log('keydown', e.code)
-      keypress(e)
+        if (!connected)
+            return;
+        console.log('keydown', e.code)
+        keypress(e)
     });
 
     function sourceOnChange(selectObject) {
@@ -72,7 +78,7 @@ table, th, td {
               'Content-Type': 'application/json'
             },
         };
-        fetch('{{ url_for('home.connect_controller') }}', options)
+        fetch('{{ url_for('home.connect_controller') }}', options).then((response) => connected = true)
     }
 
 </script>
