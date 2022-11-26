@@ -1,11 +1,12 @@
 import io
+from typing import Optional
 
 import cv2
 import numpy as np
 from flask import Response, request, render_template
 
 from capture import VideoCapture
-from controller import DummyController, Controller
+from controller import DummyController, Controller, NxbtController
 from logger import logger
 from portal.debug.debugger import web_debugger
 from portal.home.capture import ThreadSafeCapture
@@ -30,8 +31,7 @@ def list_available_source():
 
 available_sources = list_available_source()
 capture = ThreadSafeCapture(VideoCapture(0))
-
-controller = DummyController()
+controller: Optional[Controller] = None
 
 
 def main():
@@ -86,6 +86,8 @@ def video_feed():
 
 
 def key_press():
+    if controller is None:
+        return Response()
     event_type = request.json['type']
     if event_type == 'keydown':
         raw = request.json['key']
@@ -103,4 +105,14 @@ def key_press():
             else:
                 controller.press_buttons([key])
     # TODO: support long press
+    return Response()
+
+
+def connect_controller():
+    global controller
+    endpoint = request.json['endpoint']
+    if endpoint != '':
+        controller = NxbtController(endpoint)
+    else:
+        controller = DummyController()
     return Response()

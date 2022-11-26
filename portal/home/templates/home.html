@@ -48,18 +48,39 @@ table, th, td {
     }
 
     function runOnClick() {
+        const params = {
+            debug: document.getElementById('debug').checked,
+        };
         const options = {
             method: 'POST',
+            body: JSON.stringify(params),
+            headers: {
+              'Content-Type': 'application/json'
+            },
         };
         fetch('{{ url_for('home.run') }}', options)
     }
 
-
+    function connectOnClick() {
+        const params = {
+            endpoint: document.getElementById('controller_endpoint').value,
+        };
+        const options = {
+            method: 'POST',
+            body: JSON.stringify(params),
+            headers: {
+              'Content-Type': 'application/json'
+            },
+        };
+        fetch('{{ url_for('home.connect_controller') }}', options)
+    }
 
 </script>
-<button onclick="runOnClick()">Run</button>
-<p></p>
 <body>
+<label>Controller Endpoint:</label>
+<input type="url" id="controller_endpoint">
+<button onclick="connectOnClick()">Connect</button>
+<p></p>
 <label>Source: </label>
 <select name="sources" id="sources" onchange="sourceOnChange(this)">
     {% for source in sources %}
@@ -71,6 +92,10 @@ table, th, td {
 <body>
 <img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
 </body>
+<p></p>
+<button onclick="runOnClick()">Run</button>
+<input type="checkbox" id="debug" value="true">
+<label>Debug</label>
 <p></p>
 <table>
     <tr>
