@@ -30,6 +30,11 @@ class TestUI(unittest.TestCase):
         for _ in range(20):
             detection.special_on(capture.capture(), OpenCVDebugger())
 
+    def test_skip(self):
+        capture = FileLoader(path=os.path.join(path, 'skip'))
+        for _ in range(20):
+            detection.skip(capture.capture(), OpenCVDebugger())
+
     def test_replay_cursor(self):
         capture = FileLoader(path=os.path.join(path, 'replay'))
         for _ in range(10):
