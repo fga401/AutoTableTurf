@@ -1,4 +1,4 @@
-from flask import Response, render_template
+from flask import Response, render_template, jsonify
 
 from portal.debug.debugger import web_debugger
 
@@ -15,6 +15,11 @@ def page(name):
         'page.html',
         name=name,
     ))
+
+
+def list_pages():
+    pages = [page for page in web_debugger.list()]
+    return jsonify(pages)
 
 
 def generate_frames(name: str):
