@@ -87,7 +87,6 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
     grids[grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
     grids[dark_grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value
     grids[dark_grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
-    grids = grids.reshape((4, 8, 8))
     costs = np.sum(cost_ratios > GRID_PIXEL_RATIO, axis=1)
 
     if debug:
@@ -105,21 +104,30 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
         for i, grid in enumerate(grid_rois):
             for k, roi in enumerate(grid):
                 cv2.rectangle(img2, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
+                cv2.putText(img2, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
-                if grid_ink_ratios[i][k] > GRID_PIXEL_RATIO:
+                if grids[i][k] == Grid.MyInk.value:
+                    cv2.rectangle(img2, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 0, 255), 1)
+                    cv2.putText(img2, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
                     cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (0, 0, 255), 1)
                     cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
-                if grid_special_ratios[i][k] > GRID_PIXEL_RATIO:
+                if grids[i][k] == Grid.MySpecial.value:
+                    cv2.rectangle(img2, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (255, 0, 0), 1)
+                    cv2.putText(img2, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
                     cv2.rectangle(mask, roi, roi + (HANDS_GRID_ROI_WIDTH, HANDS_GRID_ROI_HEIGHT), (255, 0, 0), 1)
                     cv2.putText(mask, f'{k}', roi + np.rint([HANDS_GRID_ROI_WIDTH / 10, HANDS_GRID_ROI_HEIGHT / 1.3]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
         for i, cost in enumerate(cost_rois):
             for k, roi in enumerate(cost):
                 cv2.rectangle(img2, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
                 cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (0, 255, 0), 1)
+                if cost_ratios[i][k] > GRID_PIXEL_RATIO:
+                    cv2.rectangle(img2, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (255, 0, 0), 1)
+                    cv2.rectangle(mask, roi, roi + (HANDS_COST_ROI_WIDTH, HANDS_COST_ROI_HEIGHT), (255, 0, 0), 1)
             cv2.putText(mask, f'{costs[i]}', HANDS_COST_OPENCV_ROI_LEFT_TOP[i] + np.rint([-HANDS_GRID_ROI_WIDTH * 1.5, HANDS_COST_ROI_HEIGHT]).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
         debug.show('hands.image', img2)
         debug.show('hands.color_mask', mask)
+    grids = grids.reshape((4, 8, 8))
     cards = [Card(grids[i], costs[i]) for i in range(4)]
     logger.debug(f'detection.hands: return={cards}')
     return cards
