@@ -11,7 +11,7 @@ Install requirements
 sudo pip3 install -r requirement.txt
 ```
 
-Run the server
+Run the server on Raspberry 4B
 
 ```bash
 # change hci0's address for better connection. refer: https://github.com/Poohl/joycontrol/issues/4
