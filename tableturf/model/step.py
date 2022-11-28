@@ -48,7 +48,7 @@ class Step:
             self_rotate = 0 if self.__rotate is None else self.__rotate
             other_rotate = 0 if other.__rotate is None else other.__rotate
             return (self.card.get_pattern(self_rotate), self.__action) == (other.card.get_pattern(other_rotate), other.__action) and np.all(self.__pos == other.__pos)
-        return NotImplemented
+        return False
 
     def __repr__(self):
         return f'Step(action={self.__action}, card={self.__card}, rotate={self.__rotate}, pos={self.__pos})'

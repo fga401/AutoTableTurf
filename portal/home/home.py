@@ -47,15 +47,17 @@ def main():
 
 def run():
     debug = request.json['debug']
+    deck = int(request.json['deck'])
+    logger.debug(f'portal.home.run: deck={deck}, debug={debug}')
     ai = SimpleAI()
     manager = TableTurfManager(
         capture,
         controller if controller is not None else DummyController(),
         ai,
-        Exit(max_battle=1),
+        Exit(max_battle=1000),
         debug=web_debugger if debug else None,
     )
-    manager.run(deck=0)
+    manager.run(deck=deck)
     return Response()
 
 

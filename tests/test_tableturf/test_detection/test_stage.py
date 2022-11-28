@@ -46,8 +46,8 @@ class TestStage(unittest.TestCase):
         capture = FileLoader(path=os.path.join(path, 'stage4'))
         rois, width, height = detection.stage_rois(roi_capture.capture())
         for _ in range(30):
-            detected_stage, is_fiery = detection.stage(stage_capture.capture(), rois, width, height)
-            detection.preview(capture.capture(), detected_stage, is_fiery, rois, width, height, OpenCVDebugger())
+            detected_stage = detection.stage(stage_capture.capture(), rois, width, height)
+            detection.preview(capture.capture(), detected_stage, rois, width, height, OpenCVDebugger())
 
     def test_preview_6(self):
         roi_capture = FileLoader(files=[os.path.join(path, 'stage1', 'i1.jpg')])
@@ -55,10 +55,11 @@ class TestStage(unittest.TestCase):
         capture = FileLoader(path=os.path.join(path, 'stage6'))
         rois, width, height = detection.stage_rois(roi_capture.capture())
         for _ in range(30):
-            detected_stage, is_fiery = detection.stage(stage_capture.capture(), rois, width, height, debug=None)
-            detection.preview(capture.capture(), detected_stage, is_fiery, rois, width, height, OpenCVDebugger())
+            detected_stage = detection.stage(stage_capture.capture(), rois, width, height, debug=None)
+            is_fiery = detected_stage.fiery_grid
+            detection.preview(capture.capture(), detected_stage, rois, width, height, OpenCVDebugger())
 
     def test_sp(self):
         capture = FileLoader(path=os.path.join(path, 'stage5'))
         for _ in range(10):
-            detection.sp(capture.capture(), True)
+            detection.sp(capture.capture(), debug=OpenCVDebugger())

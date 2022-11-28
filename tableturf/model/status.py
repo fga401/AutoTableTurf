@@ -111,3 +111,8 @@ class Status:
 
     def __str__(self):
         return repr(self)
+
+    def __eq__(self, other):
+        if isinstance(other, Status):
+            return self.__stage == other.__stage and self.__hands == other.__hands and self.__my_sp == other.__my_sp and self.__his_sp == other.__his_sp and self.__my_deck == other.__my_deck and self.__his_deck == other.__his_deck
+        return False

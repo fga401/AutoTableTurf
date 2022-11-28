@@ -6,8 +6,26 @@ from tableturf.manager.action import util
 from tableturf.model import Pattern, Grid, Stage, Step
 
 
-def rotate_card_marco(step: Step) -> str:
-    return util.buttons_to_marco([Controller.Button.Y] * step.rotate)
+def rotate_card_marco(rotate: int) -> str:
+    return util.buttons_to_marco([Controller.Button.Y] * rotate)
+
+
+def __remove_special_squares(pattern: Pattern):
+    if pattern is None:
+        return None
+    ink = pattern.grid.copy()
+    ink[ink != Grid.MyInk.value] = Grid.Empty.value
+    if np.all(ink == Grid.Empty.value):
+        return None
+    return Pattern(ink)
+
+
+def compare_pattern(a: Pattern, b: Pattern) -> bool:
+    if a == b:
+        return True
+    a = __remove_special_squares(a)
+    b = __remove_special_squares(b)
+    return a == b
 
 
 def move_card_marco(current: np.ndarray, preview: Pattern, stage: Stage, step: Step) -> str:
@@ -16,20 +34,17 @@ def move_card_marco(current: np.ndarray, preview: Pattern, stage: Stage, step: S
     expected_pattern = step.card.get_pattern(step.rotate)
     if preview != expected_pattern:
         # compare trivial squares
-        actual_ink = preview.grid.copy()
-        actual_ink[actual_ink != Grid.MyInk.value] = Grid.Empty.value
-        expected_ink = expected_pattern.grid.copy()
-        expected_ink[expected_ink != Grid.MyInk.value] = Grid.Empty.value
-        if np.all(actual_ink == Grid.Empty.value) or np.all(expected_ink == Grid.Empty.value):
+        actual_ink = __remove_special_squares(preview)
+        expected_ink = __remove_special_squares(expected_pattern)
+        if expected_ink is None or actual_ink != expected_ink:
             logger.warn(f'action.move_card_marco: unmatch pattern')
             return ''
-        actual_ink_pattern = Pattern(actual_ink)
-        expected_ink_pattern = Pattern(expected_ink)
-        if actual_ink_pattern != expected_ink_pattern:
-            logger.warn(f'action.move_card_marco: unmatch pattern')
-            return ''
-        offset = expected_pattern.offset[1] if expected_pattern.squares[0] == Grid.MySpecial.value else expected_pattern.offset[0]
-        current = current - offset
+        current_offset = preview.offset[np.argmax(preview.squares == Grid.MyInk.value)]
+        target_offset = expected_pattern.offset[np.argmax(expected_pattern == Grid.MyInk.value)]
+        current = current + current_offset
+        target = target + target_offset
+        logger.debug(f'action.move_card_marco: fix current. offset={current_offset}, current={current}')
+        logger.debug(f'action.move_card_marco: fix target. offset={target_offset}, target={target}')
     diff_y, diff_x = target - current
     if diff_x > 0:
         step_x = 1

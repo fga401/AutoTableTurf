@@ -44,13 +44,13 @@ FOCUS_COST_ROI_HEIGHT_OFFSETS = [-0.5, 0, -1, -1]
 FOCUS_COST_NUMPY_ROI_TOP_LEFTS = np.array([util.grid_roi_top_lefts(top_left, 6, 1, FOCUS_COST_ROI_WIDTH_STEPS[i], 0, 0, FOCUS_COST_ROI_HEIGHT_OFFSETS[i]) for i, top_left in enumerate(FOCUS_COST_TOP_LEFTS)]).reshape((4, 6, 2))
 
 MY_INK_LIGHTER_COLOR_HSV_UPPER_BOUND = (35, 255, 255)
-MY_INK_LIGHTER_COLOR_HSV_LOWER_BOUND = (30, 150, 150)
+MY_INK_LIGHTER_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 MY_SPECIAL_LIGHTER_COLOR_HSV_UPPER_BOUND = (25, 255, 255)
-MY_SPECIAL_LIGHTER_COLOR_HSV_LOWER_BOUND = (20, 150, 150)
+MY_SPECIAL_LIGHTER_COLOR_HSV_LOWER_BOUND = (20, 100, 150)
 MY_INK_DARKER_COLOR_HSV_UPPER_BOUND = (35, 255, 140)
-MY_INK_DARKER_COLOR_HSV_LOWER_BOUND = (27, 200, 100)
+MY_INK_DARKER_COLOR_HSV_LOWER_BOUND = (27, 100, 100)
 MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND = (27, 255, 140)
-MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (15, 200, 100)
+MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND = (15, 100, 100)
 GRID_PIXEL_RATIO = 0.3
 
 
@@ -73,13 +73,11 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
     special_lower_bound, special_upper_bound = MY_SPECIAL_LIGHTER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_LIGHTER_COLOR_HSV_UPPER_BOUND
     grid_ink_ratios = np.array([__grid_ratios(idx, ink_lower_bound, ink_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
     grid_special_ratios = np.array([__grid_ratios(idx, special_lower_bound, special_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
-    dark_ink_lower_bound, dark_ink_upper_bound = MY_INK_DARKER_COLOR_HSV_LOWER_BOUND, MY_INK_DARKER_COLOR_HSV_UPPER_BOUND
-    dark_special_lower_bound, dark_special_upper_bound = MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND
-    dark_grid_ink_ratios = np.array([__grid_ratios(idx, dark_ink_lower_bound, dark_ink_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
-    dark_grid_special_ratios = np.array([__grid_ratios(idx, dark_special_lower_bound, dark_special_upper_bound) for grid in grid_rois for idx in grid]).reshape(4, 64)
+    dark_grid_ink_ratios = np.array([__grid_ratios(idx, MY_INK_DARKER_COLOR_HSV_LOWER_BOUND, MY_INK_DARKER_COLOR_HSV_UPPER_BOUND) for grid in grid_rois for idx in grid]).reshape(4, 64)
+    dark_grid_special_ratios = np.array([__grid_ratios(idx, MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND) for grid in grid_rois for idx in grid]).reshape(4, 64)
 
     cost_ratios = np.array([__grid_ratios(idx, special_lower_bound, special_upper_bound) for grid in cost_rois for idx in grid]).reshape(4, 6)
-    dark_cost_ratios = np.array([__grid_ratios(idx, dark_special_lower_bound, dark_special_upper_bound) for grid in cost_rois for idx in grid]).reshape(4, 6)
+    dark_cost_ratios = np.array([__grid_ratios(idx, MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND) for grid in cost_rois for idx in grid]).reshape(4, 6)
     cost_ratios = np.maximum(cost_ratios, dark_cost_ratios)
 
     grids = np.zeros((4, 64), dtype=int)
@@ -96,8 +94,8 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         ink_mask = cv2.inRange(hsv, ink_lower_bound, ink_upper_bound)
         special_mask = cv2.inRange(hsv, special_lower_bound, special_upper_bound)
-        dark_ink_mask = cv2.inRange(hsv, dark_ink_lower_bound, dark_ink_upper_bound)
-        dark_special_mask = cv2.inRange(hsv, dark_special_lower_bound, dark_special_upper_bound)
+        dark_ink_mask = cv2.inRange(hsv, MY_INK_DARKER_COLOR_HSV_LOWER_BOUND, MY_INK_DARKER_COLOR_HSV_UPPER_BOUND)
+        dark_special_mask = cv2.inRange(hsv, MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND)
         # mask = np.maximum(ink_mask, special_mask)
         mask = np.max([ink_mask, special_mask, dark_ink_mask, dark_special_mask], axis=0)
         mask = cv2.merge((mask, mask, mask))

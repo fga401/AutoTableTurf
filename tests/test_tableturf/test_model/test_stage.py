@@ -80,3 +80,11 @@ class TestStage(unittest.TestCase):
             [1, 1],
             [2, 1],
         ])
+
+    def test_stage_fiery_grid(self):
+        expected = np.array([
+            [False, False, False],
+            [True, False, False],
+            [True, False, False],
+        ])
+        self.assertTrue(np.all(self.stage.fiery_grid == expected))

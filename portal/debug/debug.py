@@ -1,3 +1,5 @@
+from time import sleep
+
 from flask import Response, render_template, jsonify
 
 from portal.debug.debugger import web_debugger
@@ -27,6 +29,7 @@ def generate_frames(name: str):
         buf = web_debugger.get(name)
         frame = bytes(buf.getbuffer())
         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+        sleep(0.5)
 
 
 def video_feed(name):

@@ -189,7 +189,7 @@ def stage_rois(img: np.ndarray, debug: Optional[Debugger] = None) -> (np.ndarray
     roi_centers = roi_centers[row_mask][:, col_mask]
     rois = rois[row_mask][:, col_mask]
 
-    stage_grid = stage(img, rois, roi_width, roi_height, last_stage=None, debug=debug)[0].grid
+    stage_grid = stage(img, rois, roi_width, roi_height, last_stage=None, debug=debug).grid
     not_wall = stage_grid != Grid.Wall.value
     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(not_wall.astype(np.uint8) * 255)
     target_cc = np.argmax(stats[1:, 4]) + 1
@@ -263,7 +263,7 @@ DEBUG_COLOR = {
 }
 
 
-def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: Optional[Stage] = None, debug: Optional[Debugger] = None) -> (Stage, np.ndarray):
+def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: Optional[Stage] = None, debug: Optional[Debugger] = None) -> Stage:
     """
     :param rois: (h, w, 2), rois[i][j] = (y, x)
     :return: stage and is_fiery
@@ -328,6 +328,14 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
     stage = np.array([__square(k, top_left) for k, top_left in enumerate(rois)])
     is_fiery = stage[:, 1]
     stage = stage[:, 0]
+    # find a maximum connected component
+    stage = stage.reshape((h, w))
+    not_wall = stage != Grid.Wall.value
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(not_wall.astype(np.uint8) * 255)
+    target_cc = np.argmax(stats[1:, 4]) + 1
+    not_wall[labels != target_cc] = False
+    stage[np.bitwise_not(not_wall)] = Grid.Wall.value
+    # fix by last stage
     if last_stage is not None:
         last_stage_grid = last_stage
         stage[last_stage_grid == Grid.Neutral.value] = Grid.Neutral.value
@@ -336,6 +344,7 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
 
     if debug:
         img2 = img.copy()
+        _stage = stage.reshape(-1)
         opencv_rois = np.array([util.numpy_to_opencv(idx) for idx in rois])
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         # mask_color = cv2.inRange(hsv, HIS_SPECIAL_COLOR_HSV_LOWER_BOUND, HIS_SPECIAL_COLOR_HSV_UPPER_BOUND)
@@ -348,7 +357,7 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
             edge = cv2.dilate(edge, kernel=np.ones((2, 2), dtype=np.uint8))
             edge = edge + 1  # inverse background and foreground
             num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, connectivity=8)
-            color = DEBUG_COLOR[stage[k]]
+            color = DEBUG_COLOR[_stage[k]]
             if is_fiery[k]:
                 thickness = 2
             else:
@@ -362,7 +371,6 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
         debug.show('stage.edge_mask', mask_edge)
         # debug.show('color_mask', mask_color)
 
-    stage = stage.reshape((h, w))
     is_fiery = is_fiery.reshape((h, w))
     # mark all invalid fiery special squares as trivial squares
     valid_fiery_sp = Stage(stage).my_fiery_sp
@@ -371,14 +379,13 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
     is_fiery[invalid_fiery_sp] = False
     stage[invalid_fiery_sp] = Grid.MyInk.value
     stage = Stage(stage)
-
-    logger.debug(f'detection.stage: return={stage, is_fiery}')
-    return stage, is_fiery
+    logger.debug(f'detection.stage: return={stage}')
+    return stage
 
 
 PREVIEW_SQUARE_CANNY_THRESHOLD = (50, 80)
-PREVIEW_INK_DIAGONAL_RATIO = 0.8
-PREVIEW_INK_RATIO = 0.2
+PREVIEW_INK_DIAGONAL_RATIO = 0.75
+PREVIEW_INK_RATIO = 0.15
 
 PREVIEW_SPECIAL_RATIO = 0.025
 PREVIEW_MY_FIRE_COLOR_HSV_RANGES = [
@@ -406,7 +413,7 @@ PREVIEW_MY_SPECIAL_COLOR_HSV_RANGES = [
     [(10, 95, 240), (20, 130, 255)],
 ]
 PREVIEW_HIS_SPECIAL_COLOR_HSV_RANGES = [
-    [(90, 100, 240), (100, 130, 255)],
+    [(90, 60, 230), (100, 80, 250)],
 ]
 PREVIEW_MY_FIERY_SPECIAL_COLOR_HSV_RANGES = [
     [(20, 120, 240), (30, 140, 250)],
@@ -429,18 +436,18 @@ PREVIEW_HIS_INK_DARKER_GRAY_COLOR_HSV_RANGES = [
     [(110, 50, 180), (120, 80, 240)],
 ]
 PREVIEW_MY_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
-    [(20, 180, 190), (30, 250, 210)],
+    [(18, 180, 190), (30, 255, 230)],
 ]
 PREVIEW_HIS_INK_DARKER_ORANGE_COLOR_HSV_RANGES = [
-    [(0, 40, 180), (10, 70, 190)],
+    [(0, 80, 180), (15, 155, 230)],
     [(140, 45, 120), (180, 80, 190)],
 ]
 
 
-def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarray, roi_width, roi_height, debug: Optional[Debugger] = None) -> Tuple[Optional[Pattern], Optional[np.ndarray]]:
+def preview(img: np.ndarray, stage: Stage, rois: np.ndarray, roi_width, roi_height, debug: Optional[Debugger] = None) -> Tuple[Optional[Pattern], Optional[np.ndarray]]:
     h, w, _ = rois.shape
-    stage_grid = stage.grid.reshape((h * w))
-    is_fiery = is_fiery.reshape((h * w))
+    stage_grid = stage.grid.copy().reshape((h * w))
+    is_fiery = stage.fiery_grid.copy().reshape((h * w))
     rois = rois.reshape((h * w, 2))
     sp_on = special_on(img)
 
@@ -546,8 +553,9 @@ def preview(img: np.ndarray, stage: Stage, is_fiery: np.ndarray, rois: np.ndarra
         _, labels, stats, centroids = cv2.connectedComponentsWithStats(pattern_mask, connectivity=8)
         target_label = np.argmax(stats[1:, 4]) + 1
         max_size = stats[target_label, 4]
+        # select the one closest to the center
         if max_size == 1:
-            indexes = centroids[1:, 1] * w + centroids[1:, 0]
+            indexes = (centroids[1:, 1] * w + centroids[1:, 0]).astype(int)
             in_wall = stage_grid[indexes] == Grid.Wall.value
             if np.all(in_wall):
                 dist = np.power(centroids[1:] - (w // 2, h // 2), 2)

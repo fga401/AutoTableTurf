@@ -5,6 +5,7 @@ table, th, td {
   border-collapse: collapse;
 }
 
+
 </style>
 <script>
     var connected = false;
@@ -54,6 +55,7 @@ table, th, td {
     function runOnClick() {
         const params = {
             debug: document.getElementById('debug').checked,
+            deck: parseInt(document.getElementById('deck').value)
         };
         const options = {
             method: 'POST',
@@ -79,6 +81,7 @@ table, th, td {
         fetch('{{ url_for('home.connect_controller') }}', options).then((response) => connected = true)
     }
 
+
 </script>
 <body>
 <label>Controller Endpoint:</label>
@@ -97,9 +100,12 @@ table, th, td {
 <img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
 </body>
 <p></p>
+<label>Deck:</label>
+<input type="number" min="0" max="15" id="deck" value="0">
+<label><a href="{{ url_for('debug.main') }}">Debug:</a></label>
+<input type="checkbox" value="true" id="debug">
+<p></p>
 <button onclick="runOnClick()">Run</button>
-<input type="checkbox" id="debug" value="true">
-<label><a href="{{ url_for('debug.main') }}">Debug</a></label>
 <p></p>
 <table>
     <tr>

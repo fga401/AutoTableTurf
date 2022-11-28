@@ -78,7 +78,12 @@ class Stage:
         self.__his_neighborhoods = collect_ink_neighborhoods(self.__his_ink)
         self.__his_sp_neighborhoods = collect_sp_neighborhoods(self.__his_sp)
 
+        self.__fiery_grid = np.zeros_like(self.__grid, dtype=bool)
+        self.__fiery_grid[self.__my_fiery_sp[:, 0], self.__my_fiery_sp[:, 1]] = True
+        self.__fiery_grid[self.__his_fiery_sp[:, 0], self.__his_fiery_sp[:, 1]] = True
+
         self.__grid.setflags(write=False)
+        self.__fiery_grid.setflags(write=False)
         self.__my_ink.setflags(write=False)
         self.__my_sp.setflags(write=False)
         self.__my_fiery_sp.setflags(write=False)
@@ -96,6 +101,13 @@ class Stage:
         Pattern of the Stage. (h w)
         """
         return self.__grid
+
+    @property
+    def fiery_grid(self) -> np.ndarray:
+        """
+        Indicate which square is fiery. (h w)
+        """
+        return self.__fiery_grid
 
     @property
     def shape(self) -> tuple:
@@ -200,3 +212,8 @@ class Stage:
 
     def __str__(self):
         return repr(self)
+
+    def __eq__(self, other):
+        if isinstance(other, Stage):
+            return np.all(self.__grid == other.__grid)
+        return False

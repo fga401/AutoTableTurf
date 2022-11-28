@@ -52,6 +52,9 @@ class Pattern:
         """
         return self.__grid
 
+    def rotate(self, rotate):
+        return Pattern(np.rot90(self.__grid, rotate))
+
     def __hash__(self):
         return hash(str(self.__offsets))
 
@@ -114,7 +117,7 @@ class Card:
     def __eq__(self, other):
         if isinstance(other, Card):
             return np.all(self.__patterns[0] == other.__patterns[0])
-        return NotImplemented
+        return False
 
     def __repr__(self):
         return f'Card(pattern={self.__patterns[0]}, sp_cost={self.__sp_cost})'
