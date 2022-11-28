@@ -25,7 +25,7 @@ Automate the Tableturf game and help you reach Level 50.
 
 - Automated script based on image recognition.
 - Simple web portal.
-- ~~A stupid AI that move randomly.~~
+- ~~A stupid AI that moves randomly.~~
 
 ## Getting Started
 
