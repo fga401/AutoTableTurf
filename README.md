@@ -54,6 +54,8 @@ On the web portal:
 4. Choose the deck you want to use.
 5. Click 'Run'.
 
+![2022-11-28 22_16_36-](https://user-images.githubusercontent.com/36651740/204300430-a0051a0e-3617-4fca-96cc-f8c6dbd25227.png)
+
 ## Plan
 
 - [x] Virtual controller API
