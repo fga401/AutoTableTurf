@@ -43,7 +43,7 @@ Setup and run the virtual controller server on the device which has Bluetooth ad
 
 Run the web portal:
 ```bash
-export FLASK_APP = portal
+export FLASK_APP=portal
 sudo python3 -m flask run --host=0.0.0.0
 ```
 

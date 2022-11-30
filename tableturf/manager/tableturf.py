@@ -227,10 +227,6 @@ class TableTurfManager:
         target = 0 if close else 1
         count = 0
         while True:
-            # press A when unlock new items
-            count = (count + 1) % 20
-            if count == 0:
-                self.__controller.press_buttons([Controller.Button.A])
             current = self.__multi_detect(detection.replay_cursor)(debug=self.__debug)
             if current == target:
                 break
@@ -239,5 +235,9 @@ class TableTurfManager:
                 self.__controller.macro(macro)
             else:
                 sleep(0.5)
+            # press A when unlock new items
+            count = (count + 1) % 6
+            if count == 0:
+                self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost

@@ -384,7 +384,7 @@ def stage(img: np.ndarray, rois: np.ndarray, roi_width, roi_height, last_stage: 
 
 
 PREVIEW_SQUARE_CANNY_THRESHOLD = (50, 80)
-PREVIEW_INK_DIAGONAL_RATIO = 0.75
+PREVIEW_INK_DIAGONAL_RATIO = 0.8
 PREVIEW_INK_RATIO = 0.15
 
 PREVIEW_SPECIAL_RATIO = 0.025
@@ -593,11 +593,12 @@ def preview(img: np.ndarray, stage: Stage, rois: np.ndarray, roi_width, roi_heig
         debug.show('preview.image', img2)
         debug.show('preview.edge_mask', mask_edge)
         debug.show('preview.color_mask', mask_color)
-    if no_pattern:
+    pattern = pattern.reshape((h, w))
+    index = np.argwhere(pattern != Grid.Empty.value)
+    if no_pattern or index.size == 0:
         logger.debug(f'detection.preview: return=None')
         return None, None
-    pattern = pattern.reshape((h, w))
-    index = np.argwhere(pattern != Grid.Empty.value)[0]
+    index = index[0]
     pattern = Pattern(pattern.reshape((h, w)))
     logger.debug(f'detection.preview: return={pattern, index}')
     return pattern, index
