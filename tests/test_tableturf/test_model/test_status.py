@@ -33,6 +33,7 @@ class TestStatus(unittest.TestCase):
         status = Status(
             stage=stage,
             hands=[card_0, card_1, card_2],
+            round=12,
             my_sp=2,
             his_sp=0,
             my_deck=[],
@@ -82,6 +83,7 @@ class TestStatus(unittest.TestCase):
         status = Status(
             stage=stage,
             hands=[card_0, card_1],
+            round=12,
             my_sp=2,
             his_sp=0,
             my_deck=[],

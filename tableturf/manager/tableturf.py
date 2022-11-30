@@ -86,8 +86,8 @@ class TableTurfManager:
             my_deck = self.__select_deck(deck)
             self.__redraw(my_deck=my_deck)
             self.__init_roi()
-            for round in range(12):
-                status = self.__get_status(my_deck, his_deck)
+            for round in range(12, 0, -1):
+                status = self.__get_status(round, my_deck, his_deck)
                 step = self.__ai.next_step(status)
                 self.__move(status, step)
             result = self.__get_result()
@@ -137,7 +137,7 @@ class TableTurfManager:
         self.__session['roi_height'] = roi_height
         self.__session['last_stage'] = None
 
-    def __get_status(self, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
+    def __get_status(self, round: int, my_deck: Optional[List[Card]] = None, his_deck: Optional[List[Card]] = None) -> Status:
         while self.__multi_detect(detection.hands_cursor)(debug=self.__debug) == -1:
             sleep(0.5)
         rois, roi_width, roi_height, last_stage = self.__session['rois'], self.__session['roi_width'], self.__session['roi_height'], self.__session['last_stage']
@@ -145,7 +145,7 @@ class TableTurfManager:
         self.__session['last_stage'] = stage
         hands = self.__multi_detect(detection.hands)(debug=self.__debug)
         my_sp, his_sp = self.__multi_detect(detection.sp)(debug=self.__debug)
-        return Status(stage, hands, my_sp, his_sp, my_deck, his_deck)
+        return Status(stage=stage, hands=hands, round=round, my_sp=my_sp, his_sp=his_sp, my_deck=my_deck, his_deck=his_deck)
 
     def __move_hands_cursor(self, target):
         while True:

@@ -9,9 +9,10 @@ from tableturf.model.step import Step
 
 
 class Status:
-    def __init__(self, stage: Stage, hands: List[Card], my_sp: int, his_sp: int, my_deck: List[Card], his_deck: List[Card]):
+    def __init__(self, stage: Stage, hands: List[Card], round: int, my_sp: int, his_sp: int, my_deck: List[Card], his_deck: List[Card]):
         self.__stage = stage
         self.__hands = hands
+        self.__round = round
         self.__my_sp = my_sp
         self.__his_sp = his_sp
         self.__my_deck = my_deck
@@ -73,6 +74,10 @@ class Status:
     @property
     def hands(self) -> List[Card]:
         return self.__hands
+
+    @property
+    def round(self) -> int:
+        return self.__round
 
     @property
     def my_sp(self) -> int:

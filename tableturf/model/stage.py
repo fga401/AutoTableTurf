@@ -43,7 +43,7 @@ class Stage:
 
         def split_sp(sp: np.ndarray) -> tuple:
             if sp.size == 0:
-                return np.zeros((0, 2)), np.zeros((0, 2))
+                return np.zeros((0, 2), dtype=int), np.zeros((0, 2), dtype=int)
             is_sp_fiery = np.array([is_fiery(idx) for idx in sp])
             return sp[is_sp_fiery], sp[np.bitwise_not(is_sp_fiery)]
 
