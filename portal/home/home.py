@@ -54,10 +54,13 @@ def run():
         capture,
         controller if controller is not None else DummyController(),
         ai,
-        Exit(max_battle=1000),
-        debug=web_debugger if debug else None,
+        web_debugger,
     )
-    manager.run(deck=deck)
+    manager.run(
+        deck=deck,
+        closer=Exit(max_battle=1000),
+        debug=debug
+    )
     return Response()
 
 
@@ -97,13 +100,13 @@ def key_press():
         if key is not None:
             if key == Controller.Stick.L_STICK:
                 if raw == 'a':
-                    controller.tilt_stick(key, -100, 0)
+                    controller.tilt_stick(key, -100, 0, tilted=0.3)
                 elif raw == 's':
-                    controller.tilt_stick(key, 0, -100)
+                    controller.tilt_stick(key, 0, -100, tilted=0.3)
                 elif raw == 'd':
-                    controller.tilt_stick(key, 100, 0)
+                    controller.tilt_stick(key, 100, 0, tilted=0.3)
                 elif raw == 'w':
-                    controller.tilt_stick(key, 0, 100)
+                    controller.tilt_stick(key, 0, 100, tilted=0.3)
             else:
                 controller.press_buttons([key])
     # TODO: support long press

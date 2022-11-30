@@ -112,12 +112,12 @@ class Status:
         return self.__all_possible_steps_by_card[card]
 
     def __repr__(self):
-        return f'Stage(stage={self.__stage}, hands={self.__hands}, my_sp={self.__my_sp}, his_sp={self.__his_sp}, my_deck={self.__my_deck}, his_deck={self.__his_deck})'
+        return f'Stage(stage={self.__stage}, hands={self.__hands}, round={self}, my_sp={self.__my_sp}, his_sp={self.__his_sp}, my_deck={self.__my_deck}, his_deck={self.__his_deck})'
 
     def __str__(self):
         return repr(self)
 
     def __eq__(self, other):
         if isinstance(other, Status):
-            return self.__stage == other.__stage and self.__hands == other.__hands and self.__my_sp == other.__my_sp and self.__his_sp == other.__his_sp and self.__my_deck == other.__my_deck and self.__his_deck == other.__his_deck
+            return self.__stage == other.__stage and self.__hands == other.__hands and self.__round == other.__round and self.__my_sp == other.__my_sp and self.__his_sp == other.__his_sp and self.__my_deck == other.__my_deck and self.__his_deck == other.__his_deck
         return False
