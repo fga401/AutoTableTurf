@@ -4,23 +4,6 @@ Automate the Tableturf game and help you reach Level 50.
 
 ![image](https://user-images.githubusercontent.com/36651740/194977551-2014cff7-5fe4-4964-aad9-7a467aba9aef.png)
 
-> ```
-> @startuml
-> agent "Switch" as sw
-> component "AutoTableTurf" {
->   agent "Screen Recognition" as sr
->   agent "AI" as ai
->   agent "Controller" as vc
-> }
-> agent "Bluetooth Adapter" as ba
-> sw --> sr: Screen Capture
-> sr -> ai: Model
-> ai -> vc: Next steps
-> ba <-- vc: Commands
-> sw <- ba: Virtual Pro-Controller
-> @enduml
-> ```
-
 ## Features
 
 - Automated script based on image recognition.
