@@ -18,7 +18,5 @@ if __name__ == '__main__':
         capture,
         controller,
         ai,
-        Exit(max_battle=1),
-        debug=True,
     )
-    manager.run(2)
+    manager.run(2, closer=Exit(max_battle=1))
