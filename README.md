@@ -13,25 +13,32 @@ Automate the Tableturf game and help you reach Level 50.
 ## Getting Started
 
 prerequisite:
+
 - Bluetooth adapter. Tested on Raspberry 4B.
 - Capture card. Tested on Razer Ripsaw HD.
+
 > Note: all parameters about image recognition are based on Razer Ripsaw HD. It may need to finetune for other devices.
 
 Install the requirements:
+
 ```bash
 sudo pip3 install -r requirement.txt
 ```
 
-Setup and run the virtual controller server on the device which has Bluetooth adapter. Please refer to: https://github.com/fga401/AutoTableTurf/tree/master/controller/nxbt_server
+Setup and run the virtual controller server on the device which has Bluetooth adapter. Please refer
+to: https://github.com/fga401/AutoTableTurf/tree/master/controller/nxbt_server
 
 Run the web portal:
+
 ```bash
 export FLASK_APP=portal
 sudo python3 -m flask run --host=0.0.0.0
 ```
 
 On the web portal:
-1. enter the virtual controller server endpoint and click `Connect`. If successful, you can control your Switch by keyboard.
+
+1. enter the virtual controller server endpoint and click `Connect`. If successful, you can control your Switch by
+   keyboard.
 2. Choose the correct webcam whose source is Switch.
 3. Enter deck selection interface in Tableturf.
 4. Choose the deck you want to use.
@@ -44,7 +51,7 @@ On the web portal:
 - [x] Virtual controller API
 - [x] Screen capturing
 - [x] Screen recognition & Game flow testing
-- [ ] Smarter AI
+- [ ] [WIP] Smarter AI
 - [ ] User-friendly interface
 
 ## Credits

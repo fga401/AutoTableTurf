@@ -2,10 +2,10 @@ from enum import Enum
 
 
 class Grid(Enum):
-    Empty = 0
-    MyInk = 1
-    MySpecial = 2
-    HisInk = -1
-    HisSpecial = -2
-    Neutral = -10
-    Wall = -100
+    Empty = 1
+    MyInk = 2
+    MySpecial = 4
+    HisInk = 8
+    HisSpecial = 16
+    Neutral = 32
+    Wall = 64

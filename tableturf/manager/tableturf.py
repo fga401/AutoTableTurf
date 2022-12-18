@@ -89,6 +89,7 @@ class TableTurfManager:
         }
         self.stats.start_time = datetime.now().timestamp()
         while True:
+            self.__init_battle()
             self.__select_deck(deck)
             self.__redraw()
             self.__init_roi()
@@ -102,6 +103,9 @@ class TableTurfManager:
             self.__close(close)
             if close:
                 break
+
+    def __init_battle(self):
+        self.__ai.reset()
 
     def __select_deck(self, deck: int):
         target = deck

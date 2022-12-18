@@ -18,54 +18,52 @@ class Status:
         self.__my_deck = my_deck
         self.__his_deck = his_deck
 
-        m, n = self.stage.shape
-        neighborhoods = self.stage.my_neighborhoods
-        sp_neighborhoods = self.stage.my_sp_neighborhoods
-
-        def possible_steps_without_special_attack(card: Card) -> Set[Step]:
-            result = set()
-            result.add(Step(Step.Action.Skip, card, None, None))
-            for idx in neighborhoods:
-                for rotate in range(4):
-                    offset = card.get_pattern(rotate).offset
-                    for origin in range(card.size):
-                        pattern_indexes = offset - offset[origin] + idx
-                        # pattern is out of boundary
-                        xs = pattern_indexes[:, 0]
-                        ys = pattern_indexes[:, 1]
-                        if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
-                            continue
-                        # squares are not empty
-                        if not np.all(self.stage.grid[xs, ys] == Grid.Empty.value):
-                            continue
-                        result.add(Step(Step.Action.Place, card, rotate, pattern_indexes[0]))
-            return result
-
-        def possible_steps_with_special_attack(card: Card) -> Set[Step]:
-            result = set()
-            if card.sp_cost > self.__my_sp:
-                return result
-            for idx in sp_neighborhoods:
-                for rotate in range(4):
-                    offset = card.get_pattern(rotate).offset
-                    for origin in range(card.size):
-                        pattern_indexes = offset - offset[origin] + idx
-                        xs = pattern_indexes[:, 0]
-                        ys = pattern_indexes[:, 1]
-                        # pattern is out of boundary
-                        if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
-                            continue
-                        # squares are not empty
-                        values = self.stage.grid[xs, ys]
-                        if not np.all((values == Grid.Empty.value) | (values == Grid.MyInk.value) | (values == Grid.HisInk.value)):
-                            continue
-                        result.add(Step(Step.Action.SpecialAttack, card, rotate, pattern_indexes[0]))
-            return result
-
         self.__all_possible_steps_by_card = {
-            card: list(possible_steps_without_special_attack(card).union(possible_steps_with_special_attack(card))) for card in hands
+            card: list(self.__possible_steps_without_special_attack(card).union(self.__possible_steps_with_special_attack(card))) for card in hands
         }
         self.__all_possible_steps = [step for steps_set in self.__all_possible_steps_by_card.values() for step in steps_set]
+
+    def __possible_steps_without_special_attack(self, card: Card) -> Set[Step]:
+        m, n = self.stage.shape
+        result = set()
+        result.add(Step(Step.Action.Skip, card, None, None))
+        for idx in self.stage.my_neighborhoods:
+            for rotate in range(4):
+                offset = card.get_pattern(rotate).offset
+                for origin in range(card.size):
+                    pattern_indexes = offset - offset[origin] + idx
+                    # pattern is out of boundary
+                    xs = pattern_indexes[:, 0]
+                    ys = pattern_indexes[:, 1]
+                    if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
+                        continue
+                    # squares are not empty
+                    if not np.all(self.stage.grid[xs, ys] == Grid.Empty.value):
+                        continue
+                    result.add(Step(Step.Action.Place, card, rotate, pattern_indexes[0]))
+        return result
+
+    def __possible_steps_with_special_attack(self, card: Card) -> Set[Step]:
+        m, n = self.stage.shape
+        result = set()
+        if card.sp_cost > self.__my_sp:
+            return result
+        for idx in self.stage.my_sp_neighborhoods:
+            for rotate in range(4):
+                offset = card.get_pattern(rotate).offset
+                for origin in range(card.size):
+                    pattern_indexes = offset - offset[origin] + idx
+                    xs = pattern_indexes[:, 0]
+                    ys = pattern_indexes[:, 1]
+                    # pattern is out of boundary
+                    if not np.all((xs >= 0) & (xs < m) & (ys >= 0) & (ys < n)):
+                        continue
+                    # squares are not empty
+                    values = self.stage.grid[xs, ys]
+                    if not np.all(np.bitwise_and(values, Grid.Empty.value | Grid.MyInk.value | Grid.HisInk.value)):
+                        continue
+                    result.add(Step(Step.Action.SpecialAttack, card, rotate, pattern_indexes[0]))
+        return result
 
     @property
     def stage(self) -> Stage:
@@ -101,21 +99,29 @@ class Status:
         """
         return self.__his_deck
 
-    def get_possible_steps(self, card: Optional[Card] = None) -> List[Step]:
+    def get_possible_steps(self, card: Optional[Card] = None, action: Step.Action = None) -> List[Step]:
         """
         Return all possible steps in the current status.
 
         :param card: if not None, return possible steps of the given card.
+        :param action: if not None, only return steps with the given action.
         """
         if card is None:
-            return self.__all_possible_steps
-        return self.__all_possible_steps_by_card[card]
+            steps = self.__all_possible_steps
+        else:
+            steps = self.__all_possible_steps_by_card[card]
+        if action is not None:
+            steps = [step for step in steps if step.action == action]
+        return steps
 
     def __repr__(self):
-        return f'Stage(stage={self.__stage}, hands={self.__hands}, round={self}, my_sp={self.__my_sp}, his_sp={self.__his_sp}, my_deck={self.__my_deck}, his_deck={self.__his_deck})'
+        return f'Stage(stage={self.__stage}, hands={self.__hands}, round={self.__round}, my_sp={self.__my_sp}, his_sp={self.__his_sp}, my_deck={self.__my_deck}, his_deck={self.__his_deck})'
 
     def __str__(self):
         return repr(self)
+
+    def __hash__(self):
+        return hash((repr(self.__hands), self.__round, self.__my_sp, self.__his_sp))
 
     def __eq__(self, other):
         if isinstance(other, Status):

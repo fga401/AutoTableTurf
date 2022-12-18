@@ -52,7 +52,7 @@ def deck(img: np.ndarray, debug: Optional[Debugger] = None) -> List[Card]:
     dark_cost_ratios = np.array([__grid_ratios(idx, MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND) for grid in DECK_COST_NUMPY_ROI_TOP_LEFTS for idx in grid]).reshape(15, 6)
     cost_ratios = np.maximum(cost_ratios, dark_cost_ratios)
 
-    grids = np.zeros((15, 64), dtype=int)
+    grids = np.full((15, 64), Grid.Empty.value, dtype=int)
     grids[grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value
     grids[grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
     grids[dark_grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value

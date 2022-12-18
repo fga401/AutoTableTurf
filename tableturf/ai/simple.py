@@ -14,3 +14,6 @@ class SimpleAI(AI):
         step = random.choice(status.get_possible_steps())
         logger.debug(f'SimpleAI.next_step: return={step}')
         return step
+
+    def reset(self):
+        return

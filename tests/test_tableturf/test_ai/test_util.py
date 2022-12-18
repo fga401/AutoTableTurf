@@ -1,12 +1,12 @@
 import unittest
 
 import numpy as np
+from tableturf.ai.alpha.next_step.estimator import Estimator
 
-import tableturf.ai.util
 from tableturf.model import Stage, Grid, Card, Step
 
 
-class TestCard(unittest.TestCase):
+class TestAIUtil(unittest.TestCase):
 
     def test_move(self):
         stage = Stage(np.array([
@@ -27,11 +27,10 @@ class TestCard(unittest.TestCase):
             2,
             np.array([1, 1])
         )
-        next_stage = tableturf.ai.util.move(stage, step)
+        next_stage = Estimator().get_stage(stage, step)
         expected = np.array([
             [Grid.Wall.value, Grid.Empty.value, Grid.Empty.value],
             [Grid.Empty.value, Grid.MySpecial.value, Grid.Empty.value],
             [Grid.MySpecial.value, Grid.MyInk.value, Grid.MyInk.value]
         ])
         self.assertTrue(np.all(next_stage.grid == expected))
-

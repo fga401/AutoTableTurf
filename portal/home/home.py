@@ -11,7 +11,7 @@ from logger import logger
 from portal.debug.debugger import web_debugger
 from portal.home.capture import ThreadSafeCapture
 from portal.home.keymap import keymap
-from tableturf.ai import SimpleAI
+from tableturf.ai.alpha import Alpha
 from tableturf.manager import TableTurfManager, Exit
 
 
@@ -49,11 +49,11 @@ def run():
     debug = request.json['debug']
     deck = int(request.json['deck'])
     logger.debug(f'portal.home.run: deck={deck}, debug={debug}')
-    ai = SimpleAI()
+    alpha_ai = Alpha()
     manager = TableTurfManager(
         capture,
         controller if controller is not None else DummyController(),
-        ai,
+        alpha_ai,
         web_debugger,
     )
     manager.run(

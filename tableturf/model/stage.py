@@ -59,20 +59,20 @@ class Stage:
         def sp_neighborhoods(idx: np.ndarray) -> np.ndarray:
             nbhd = within_grid(Stage.__NEIGHBOURHOOD_OFFSETS + idx)
             values = self.__grid[nbhd[:, 0], nbhd[:, 1]]
-            valid_nbhd = nbhd[(values == Grid.Empty.value) | (values == Grid.MyInk.value) | (values == Grid.HisInk.value)]
+            valid_nbhd = nbhd[np.bitwise_and(values, Grid.Empty.value | Grid.MyInk.value | Grid.HisInk.value) > 0]
             invalid = np.full(shape=(8 - valid_nbhd.shape[0], 2), fill_value=-1)
             return np.concatenate((valid_nbhd, invalid), axis=0)
 
         def collect_sp_neighborhoods(sp: np.ndarray) -> np.ndarray:
             return within_grid(np.unique(np.array([sp_neighborhoods(idx) for idx in sp]).reshape(-1, 2), axis=0))
 
-        self.__my_ink = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
+        self.__my_ink = np.argwhere(np.bitwise_and(self.__grid, Grid.MyInk.value | Grid.MySpecial.value))
         self.__my_sp = np.argwhere(self.__grid == Grid.MySpecial.value)
         self.__my_fiery_sp, self.__my_unfiery_sp = split_sp(self.__my_sp)
         self.__my_neighborhoods = collect_ink_neighborhoods(self.__my_ink)
         self.__my_sp_neighborhoods = collect_sp_neighborhoods(self.__my_sp)
 
-        self.__his_ink = np.argwhere((self.__grid == Grid.HisInk.value) | (self.__grid == Grid.HisSpecial.value))
+        self.__his_ink = np.argwhere(np.bitwise_and(self.__grid, Grid.HisInk.value | Grid.HisSpecial.value))
         self.__his_sp = np.argwhere(self.__grid == Grid.HisSpecial.value)
         self.__his_fiery_sp, self.__his_unfiery_sp = split_sp(self.__his_sp)
         self.__his_neighborhoods = collect_ink_neighborhoods(self.__his_ink)
@@ -212,6 +212,9 @@ class Stage:
 
     def __str__(self):
         return repr(self)
+
+    def __hash__(self):
+        return hash(str(self.__grid))
 
     def __eq__(self, other):
         if isinstance(other, Stage):

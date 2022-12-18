@@ -1,7 +1,6 @@
 import threading
 from abc import ABC, abstractmethod
 from enum import Enum
-
 from typing import List
 
 from logger import logger

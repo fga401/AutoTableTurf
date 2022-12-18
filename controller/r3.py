@@ -1,8 +1,8 @@
+from time import sleep
+from typing import List
+
 import serial
 import serial.tools.list_ports
-
-from typing import List
-from time import sleep
 
 from controller import Controller
 from logger import logger

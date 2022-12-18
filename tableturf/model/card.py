@@ -19,10 +19,25 @@ class Pattern:
             logger.warn(f"Pattern width/height > 8. grid={self.__grid}")
         self.__grid.setflags(write=False)
 
-        indexes = np.argwhere((self.__grid == Grid.MyInk.value) | (self.__grid == Grid.MySpecial.value))
+        indexes = np.argwhere(np.bitwise_and(self.__grid, Grid.MyInk.value | Grid.MySpecial.value))
         self.__squares = self.__grid[indexes[:, 0], indexes[:, 1]]
         self.__offsets = indexes - indexes[0][np.newaxis, ...]
         self.__size, _ = indexes.shape
+        self.__height, self.__width = self.__grid.shape
+
+    @property
+    def width(self) -> int:
+        """
+        Width of the pattern.
+        """
+        return self.__width
+
+    @property
+    def height(self) -> int:
+        """
+        Height of the pattern.
+        """
+        return self.__height
 
     @property
     def size(self) -> int:

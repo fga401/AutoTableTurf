@@ -80,7 +80,7 @@ def hands(img: np.ndarray, cursor=None, debug: Optional[Debugger] = None) -> Lis
     dark_cost_ratios = np.array([__grid_ratios(idx, MY_SPECIAL_DARKER_COLOR_HSV_LOWER_BOUND, MY_SPECIAL_DARKER_COLOR_HSV_UPPER_BOUND) for grid in cost_rois for idx in grid]).reshape(4, 6)
     cost_ratios = np.maximum(cost_ratios, dark_cost_ratios)
 
-    grids = np.zeros((4, 64), dtype=int)
+    grids = np.full((4, 64), Grid.Empty.value, dtype=int)
     grids[grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value
     grids[grid_special_ratios > GRID_PIXEL_RATIO] = Grid.MySpecial.value
     grids[dark_grid_ink_ratios > GRID_PIXEL_RATIO] = Grid.MyInk.value

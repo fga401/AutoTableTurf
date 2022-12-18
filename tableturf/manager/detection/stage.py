@@ -111,9 +111,6 @@ def _spawn_roi_centers(centers, width_step, height_step):
     # number of roi
     nx = x_idx[-1] + 1 + lx + rx
     ny = y_idx[-1] + 1 + ly + ry
-    print(lx, ly)
-    print(rx, ry)
-    print(nx, ny)
     grid = np.zeros((ny, nx, 2, 2))
 
     # fill known centers
