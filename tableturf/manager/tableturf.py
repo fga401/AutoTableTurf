@@ -1,4 +1,5 @@
 import copy
+import random
 from datetime import datetime
 from time import sleep
 from typing import List, Optional
@@ -222,22 +223,38 @@ class TableTurfManager:
                 self.__controller.macro(macro)
         # move card
         expected_preview = step.card.get_pattern(step.rotate)
+        # in case missing Button.A command
         while True:
+            # keep moving until preview is in the target position
             while True:
-                preview, current_index = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
-                if action.compare_pattern(preview, expected_preview):
+                # keep detecting until preview is found
+                while True:
+                    preview, current_index = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
+                    if action.compare_pattern(preview, expected_preview):
+                        break
+                macro = action.move_card_marco(current_index, preview, status.stage, step)
+                if macro.strip() != '':
+                    self.__controller.macro(macro)
+                else:
                     break
-            macro = action.move_card_marco(current_index, preview, status.stage, step)
-            if macro.strip() != '':
-                self.__controller.macro(macro)
-            else:
-                break
-        self.__controller.press_buttons([Controller.Button.A])
-        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+            self.__controller.press_buttons([Controller.Button.A])
+            self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+            sleep(3)
+            # flow didn't go ahead -> card was not placed -> randomly move and re-detect
+            for i in range(25):
+                if status.round == 1:
+                    preview, _ = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
+                    if preview is None:
+                        return
+                elif self.__multi_detect(detection.hands_cursor)(debug=self.__session['debug']) != -1:
+                    return
+                sleep(0.5)
+            disturbance = random.choice([Controller.Button.DPAD_RIGHT, Controller.Button.DPAD_UP, Controller.Button.DPAD_LEFT, Controller.Button.DPAD_DOWN])
+            self.__controller.press_buttons([disturbance])
 
     def __get_result(self) -> Result:
         # TODO
-        sleep(12)
+        sleep(10)
         img = self.__capture()
         return Result(0, 0)
 
