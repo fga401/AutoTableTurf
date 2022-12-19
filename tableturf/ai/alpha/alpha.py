@@ -41,16 +41,17 @@ class Alpha(AI):
     def next_step(self, status: Status) -> Step:
         logger.debug(f'tableturf.ai.alpha.next_step: round={status.round}')
         if status.round > 2:
+            remaining_cost = sorted([card.sp_cost for card in status.hands + status.my_deck], reverse=True)
+            sp_threshold = min(np.sum(remaining_cost[:2]), 6)
             # only can drop cards or special attack
             steps = status.get_possible_steps(action=Step.Action.Place)
-            if len(steps) == 0:
+            if len(steps) == 0 or status.my_sp >= sp_threshold:
                 steps = status.get_possible_steps()
-                scores = np.array([self.__score_special_attack_step(status, step) for step in steps])
-                scores = self.__weighted_drop_card_scores(scores)
-                logger.debug(f'tableturf.ai.alpha.next_step.drop_cards: scores={scores}, steps={steps}, case=drop_card')
+                scores = np.array([self.__score_special_attack_step(status, step, sp_threshold) for step in steps])
+                logger.debug(f'tableturf.ai.alpha.next_step.special_attack: scores={scores}, steps={steps}, case=special_attack')
                 return steps[np.argmax(np.sum(scores, axis=1))]
 
-            if status.round >= 4:
+            if status.round >= 5:
                 # try to expand
                 current_score = self.__score_current_stage(status)
                 cards = self.__sort_hands_for_expanding(status)
@@ -63,8 +64,9 @@ class Alpha(AI):
                         return steps[np.argmax(np.sum(scores, axis=1))]
 
             # try to consolidate
+            remaining_sp_card = len([card.sp_cost for card in status.hands + status.my_deck if util.is_special_card(card)])
             steps = status.get_possible_steps(action=Step.Action.Place)
-            scores = np.array([self.__score_consolidating_step(status, step) for step in steps])
+            scores = np.array([self.__score_consolidating_step(status, step, remaining_sp_card) for step in steps])
             logger.debug(f'tableturf.ai.alpha.next_step.consolidating: scores={scores}, steps={steps}, case=consolidating')
             return steps[np.argmax(np.sum(scores, axis=1))]
 
@@ -72,7 +74,7 @@ class Alpha(AI):
             result = dict()
             for card in status.hands:
                 steps = status.get_possible_steps(card)
-                scores = np.array([self.__score_special_attack_step(status, step) for step in steps])
+                scores = np.array([self.__score_round_2_step(status, step) for step in steps])
                 possible_sp = np.unique(scores[:, 2])
                 for sp in possible_sp:
                     sub_group = scores[:, 2] == sp
@@ -86,16 +88,16 @@ class Alpha(AI):
                         continue
                     _card = max(_cards, key=lambda c: c.size)
                     _steps = next_status.get_possible_steps(_card)
-                    _scores = np.array([self.__score_special_attack_step(next_status, _step) for _step in _steps])
-                    _scores = _scores[:, :2]
+                    _scores = np.array([self.__score_round_1_step(next_status, _step) for _step in _steps])
                     result[step] = np.max(np.sum(_scores, axis=1))
             logger.debug(f'tableturf.ai.alpha.next_step.round_2: result={result}, case=round_2')
+            if len(result) == 0:
+                return status.get_possible_steps()[0]
             return max(result, key=result.get)
 
         elif status.round == 1:
             steps = status.get_possible_steps()
-            scores = np.array([self.__score_special_attack_step(status, step) for step in steps])
-            scores = scores[:, :2]
+            scores = np.array([self.__score_round_1_step(status, step) for step in steps])
             logger.debug(f'tableturf.ai.alpha.next_step.round_1: scores={scores}, steps={steps}, case=round_1')
             return steps[np.argmax(np.sum(scores, axis=1))]
 
@@ -142,40 +144,54 @@ class Alpha(AI):
         return True
 
     @staticmethod
-    def __score_consolidating_step(status: Status, step: Step):
+    def __score_consolidating_step(status: Status, step: Step, remaining_sp_card: int):
         next_stage = util.estimate_stage(status.stage, step)
         my_sp = status.my_sp + util.estimate_my_sp_diff(status.stage, next_stage, step)
         his_sp_diff = util.estimate_his_sp_diff(status.stage, next_stage, step)
         estimated_occupied_grids_1 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=0, connectivity=8)
         area = len(next_stage.my_ink)
 
+        sp_card = 0
         if not util.is_special_card(step.card):
             pattern = step.card.get_pattern(step.rotate)
             pos = pattern.offset[pattern.squares == Grid.MySpecial.value] + step.pos
             distance = Evaluation.square_distance(status.stage, pos)
         else:
             distance = 0
+            if remaining_sp_card <= 1:
+                sp_card = -10
 
-        return my_sp * 5, area, estimated_occupied_grids_1, distance * -0.1, his_sp_diff * -4
+        return my_sp * 5, area, estimated_occupied_grids_1 * 0.6, distance * -0.1, his_sp_diff * -3, sp_card
 
     @staticmethod
-    def __score_special_attack_step(status: Status, step: Step):
+    def __score_special_attack_step(status: Status, step: Step, sp_threshold):
         next_stage = util.estimate_stage(status.stage, step)
         my_ink = len(next_stage.my_ink)
         his_ink = len(next_stage.his_ink)
         sp = status.my_sp + util.estimate_my_sp_diff(status.stage, next_stage, step)
+        if sp > sp_threshold:
+            sp = -sp
         drop_card = Evaluation.drop_card_penalty(status, step)
-        return my_ink, his_ink * -1, sp, drop_card
+        return my_ink, his_ink * -1, sp * 4, drop_card
 
     @staticmethod
-    def __weighted_drop_card_scores(scores: np.ndarray):
-        scores[scores[:, 2] > 6] = -10
-        scores[:, 2] = scores[:, 2] * 100
-        return scores
+    def __score_round_2_step(status: Status, step: Step):
+        next_stage = util.estimate_stage(status.stage, step)
+        my_ink = len(next_stage.my_ink)
+        his_ink = len(next_stage.his_ink)
+        sp = status.my_sp + util.estimate_my_sp_diff(status.stage, next_stage, step)
+        return my_ink, his_ink * -1, sp
+
+    @staticmethod
+    def __score_round_1_step(status: Status, step: Step):
+        next_stage = util.estimate_stage(status.stage, step)
+        my_ink = len(next_stage.my_ink)
+        his_ink = len(next_stage.his_ink)
+        return my_ink, his_ink * -1
 
     @staticmethod
     def __sort_hands_for_expanding(status: Status) -> List[Card]:
-        good_cards = [card for card in status.hands if len(status.get_possible_steps(card, action=Step.Action.Place)) > 0]
+        good_cards = [card for card in status.hands if len(status.get_possible_steps(card, action=Step.Action.Place)) > 0 and card.size > 3]
         sorted_cards = sorted(good_cards, key=lambda c: (c.size, max(c.get_pattern().width, c.get_pattern().height)), reverse=True)
         sp_cards = [card for card in sorted_cards if util.is_special_card(card)]
         not_sp_cards = [card for card in sorted_cards if not util.is_special_card(card)]
