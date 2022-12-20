@@ -131,7 +131,7 @@ class Alpha(AI):
         else:
             distance = distance * -1
 
-        return estimated_occupied_grids_1, estimated_occupied_grids_2 * 0.8, estimated_occupied_grids_3 * 0.5, estimated_conflict_grids * -1, distance, size, my_sp * 5, his_sp_diff * -4
+        return estimated_occupied_grids_1, estimated_occupied_grids_2 * 0.7, estimated_occupied_grids_3 * 0.5, estimated_conflict_grids * -1, distance, size, my_sp * 6, his_sp_diff * -4
 
     @staticmethod
     def __is_good_for_expanding(scores: np.ndarray, steps: List[Step]) -> bool:
@@ -150,8 +150,9 @@ class Alpha(AI):
         his_sp_diff = util.estimate_his_sp_diff(status.stage, next_stage, step)
         estimated_occupied_grids_1 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=0, connectivity=8)
         area = len(next_stage.my_ink)
+        dilated_area = Evaluation.dilated_area(next_stage)
 
-        sp_card = 0
+        sp_card_penalty = 0
         if not util.is_special_card(step.card):
             pattern = step.card.get_pattern(step.rotate)
             pos = pattern.offset[pattern.squares == Grid.MySpecial.value] + step.pos
@@ -159,9 +160,11 @@ class Alpha(AI):
         else:
             distance = 0
             if remaining_sp_card <= 1:
-                sp_card = -10
+                sp_card_penalty = -18
+            elif remaining_sp_card <= 2:
+                sp_card_penalty = -12
 
-        return my_sp * 5, area, estimated_occupied_grids_1 * 0.6, distance * -0.1, his_sp_diff * -3, sp_card
+        return my_sp * 6, area, estimated_occupied_grids_1 * 0.6, distance * -0.01, his_sp_diff * -4, sp_card_penalty, dilated_area * -0.1
 
     @staticmethod
     def __score_special_attack_step(status: Status, step: Step, sp_threshold):
@@ -172,7 +175,7 @@ class Alpha(AI):
         if sp > sp_threshold:
             sp = -sp
         drop_card = Evaluation.drop_card_penalty(status, step)
-        return my_ink, his_ink * -1, sp * 4, drop_card
+        return my_ink, his_ink * -1, sp * 6, drop_card
 
     @staticmethod
     def __score_round_2_step(status: Status, step: Step):
@@ -265,6 +268,13 @@ class Evaluation:
         if his_dilate > 0:
             overlap = np.bitwise_or(his_overlap, overlap)
         return np.sum(overlap)
+
+    @staticmethod
+    def dilated_area(stage: Stage, dilate=1):
+        mask = (np.bitwise_and(stage.grid, Grid.MyInk.value | Grid.MySpecial.value) > 0).astype(np.uint8) * 255
+        mask = cv2.dilate(mask, kernel=np.ones((dilate * 2 + 1, dilate * 2 + 1), dtype=np.uint8))
+        mask = np.bitwise_and(mask == 255, stage.grid == Grid.Empty.value)
+        return np.sum(mask) + len(stage.my_ink)
 
     @staticmethod
     def ink_size(stage: Stage) -> float:

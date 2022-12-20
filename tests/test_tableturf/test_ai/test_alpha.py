@@ -103,39 +103,14 @@ class TestAlpha(unittest.TestCase):
 
         self.assertEqual(5, Evaluation.ink_size(stage))
 
-    def test_evaluation_recursive_area(self):
+    def test_evaluation_compaction(self):
         stage = Stage(np.array([
-            [Grid.Empty, Grid.Empty, Grid.Empty],
-            [Grid.Empty, Grid.MySpecial, Grid.Empty],
-            [Grid.Empty, Grid.Empty, Grid.Empty],
+            [Grid.Wall, Grid.Empty, Grid.Empty, Grid.HisSpecial, Grid.Wall],
+            [Grid.Wall, Grid.Empty, Grid.Empty, Grid.Wall, Grid.Wall],
+            [Grid.Empty, Grid.Empty, Grid.Empty, Grid.Empty, Grid.Empty],
+            [Grid.Wall, Grid.Empty, Grid.MySpecial, Grid.Empty, Grid.Wall],
+            [Grid.Wall, Grid.Wall, Grid.Empty, Grid.Wall, Grid.Wall],
         ]))
-        card_0 = Card(np.array([
-            [Grid.MySpecial],
-        ]), 10)
-        card_1 = Card(np.array([
-            [Grid.MyInk],
-        ]), 20)
-        card_2 = Card(np.array([
-            [Grid.MySpecial],
-            [Grid.MyInk],
-        ]), 40)
-        card_3 = Card(np.array([
-            [Grid.MyInk],
-            [Grid.MyInk],
-        ]), 40)
-        card_4 = Card(np.array([
-            [Grid.MySpecial, Grid.MyInk],
-            [Grid.MyInk, Grid.Empty],
-        ]), 40)
-        status = Status(
-            stage=stage,
-            hands=[card_0, card_1, card_2, card_3],
-            round=3,
-            my_sp=2,
-            his_sp=0,
-            my_deck=[card_4],
-            his_deck=[],
-        )
-        self.assertEqual(1, Evaluation.recursive_area(status, Step(action=Step.Action.Skip, card=card_0, rotate=None, pos=None), depth=1))
-        self.assertEqual(4, Evaluation.recursive_area(status, Step(action=Step.Action.Skip, card=card_0, rotate=None, pos=None), depth=2))
 
+        self.assertEqual(7, Evaluation.dilated_area(stage, dilate=1))
+        self.assertEqual(11, Evaluation.dilated_area(stage, dilate=2))
