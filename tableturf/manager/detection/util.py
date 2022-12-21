@@ -3,7 +3,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger import Debugger
 
 
 def numpy_to_opencv(idx: np.ndarray) -> np.ndarray:

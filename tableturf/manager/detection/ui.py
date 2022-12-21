@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from logger import logger
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger import Debugger
 from tableturf.manager.detection import util
 
 DECK_CURSOR_ROI_TOP_LEFT = np.array([285, 450])

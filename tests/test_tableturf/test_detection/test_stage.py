@@ -2,7 +2,7 @@ import os
 import unittest
 
 from capture import FileLoader
-from tableturf.debugger.cv import OpenCVDebugger
+from tableturf.manager.detection.debugger import OpenCVDebugger
 from tableturf.manager import detection
 
 path = os.path.join(os.path.realpath(__file__), '..', '..', '..', '..', 'temp')

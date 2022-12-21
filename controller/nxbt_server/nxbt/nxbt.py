@@ -644,7 +644,7 @@ class Nxbt():
 
         bus = dbus.SystemBus()
         adapters = find_objects(bus, SERVICE_NAME, ADAPTER_INTERFACE)
-        bus.exit()
+        bus.close()
 
         return adapters
 

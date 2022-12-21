@@ -317,7 +317,7 @@ def find_devices_by_alias(alias, return_path=False, created_bus=None):
 
     # Close the dbus connection if we created one
     if created_bus is None:
-        bus.exit()
+        bus.close()
 
     if return_path:
         return addresses, matching_paths
@@ -365,7 +365,7 @@ def disconnect_devices_by_alias(alias, created_bus=None):
 
     # Close the dbus connection if we created one
     if created_bus is None:
-        bus.exit()
+        bus.close()
 
 
 class BlueZ():

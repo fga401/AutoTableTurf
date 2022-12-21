@@ -10,9 +10,10 @@ from controller import DummyController, Controller, NxbtController
 from logger import logger
 from portal.debug.debugger import web_debugger
 from portal.home.capture import ThreadSafeCapture
+from portal.home.closer import WebCloser
 from portal.home.keymap import keymap
 from tableturf.ai.alpha import Alpha
-from tableturf.manager import TableTurfManager, Exit
+from tableturf.manager import TableTurfManager, Closer
 
 
 def list_available_source():
@@ -32,6 +33,7 @@ def list_available_source():
 available_sources = list_available_source()
 capture = ThreadSafeCapture(VideoCapture(0))
 controller: Optional[Controller] = None
+closer: WebCloser = None
 
 
 def main():
@@ -46,6 +48,7 @@ def main():
 
 
 def run():
+    global closer
     debug = request.json['debug']
     deck = int(request.json['deck'])
     logger.debug(f'portal.home.run: deck={deck}, debug={debug}')
@@ -56,11 +59,20 @@ def run():
         alpha_ai,
         web_debugger,
     )
+    if closer is None:
+        closer = WebCloser()
     manager.run(
         deck=deck,
-        closer=Exit(max_battle=1000),
+        closer=closer,
         debug=debug
     )
+    closer = None
+    return Response()
+
+
+def stop():
+    if closer is not None:
+        closer.set_close()
     return Response()
 
 

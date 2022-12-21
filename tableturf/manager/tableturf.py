@@ -11,27 +11,12 @@ from capture import Capture
 from controller import Controller
 from logger import logger
 from tableturf.ai import AI
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger import Debugger
 from tableturf.manager import action
+from tableturf.manager.closer import Closer
 from tableturf.manager import detection
 from tableturf.manager.data import Stats, Result
-from tableturf.model import Status, Card, Step, Stage
-
-
-class Exit:
-    def __init__(self, max_win: Optional[int] = None, max_battle: Optional[int] = None, max_time: Optional[int] = None):
-        self.__max_win = max_win
-        self.__max_battle = max_battle
-        self.__max_time = max_time
-
-    def exit(self, stats: Stats) -> bool:
-        if self.__max_win is not None and self.__max_win <= stats.win:
-            return True
-        if self.__max_battle is not None and self.__max_battle <= stats.battle:
-            return True
-        if self.__max_time is not None and self.__max_time <= stats.time:
-            return True
-        return False
+from tableturf.model import Status, Card, Step, Stage, Grid
 
 
 class TableTurfManager:
@@ -82,7 +67,7 @@ class TableTurfManager:
         self.stats = Stats()
         self.__session = dict()
 
-    def run(self, deck: int, stage: Optional[Stage] = None, his_deck: Optional[List[Card]] = None, closer: Exit = Exit(), debug=False):
+    def run(self, deck: int, stage: Optional[Stage] = None, his_deck: Optional[List[Card]] = None, closer: Closer = Closer(), debug=False):
         self.__session = {
             'empty_stage': stage,
             'his_deck': his_deck,
@@ -100,7 +85,7 @@ class TableTurfManager:
                 self.__move(status, step)
             result = self.__get_result()
             self.__update_stats(result)
-            close = closer.exit(self.stats)
+            close = closer.close(self.stats)
             self.__close(close)
             if close:
                 break
@@ -244,7 +229,7 @@ class TableTurfManager:
             for i in range(25):
                 if status.round == 1:
                     preview, _ = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
-                    if preview is None:
+                    if preview is None or np.all(preview.squares == Grid.MySpecial.value):
                         return
                 elif self.__multi_detect(detection.hands_cursor)(debug=self.__session['debug']) != -1:
                     return

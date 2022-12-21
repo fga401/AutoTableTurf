@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from logger import logger
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger.interface import Debugger
 
 
 class OpenCVDebugger(Debugger):

@@ -3,7 +3,7 @@ import os
 from capture import FileLoader
 from controller import DummyController
 from tableturf.ai import SimpleAI
-from tableturf.manager import TableTurfManager, Exit
+from tableturf.manager import TableTurfManager, Closer
 
 endpoint = "http://192.168.50.101:5000/"
 
@@ -19,4 +19,4 @@ if __name__ == '__main__':
         controller,
         ai,
     )
-    manager.run(2, closer=Exit(max_battle=1))
+    manager.run(2, closer=Closer(max_battle=1))

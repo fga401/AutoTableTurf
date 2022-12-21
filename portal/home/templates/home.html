@@ -67,6 +67,16 @@ table, th, td {
         fetch('{{ url_for('home.run') }}', options)
     }
 
+    function stopOnClick() {
+        const options = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+        };
+        fetch('{{ url_for('home.stop') }}', options)
+    }
+
     function connectOnClick() {
         const params = {
             endpoint: document.getElementById('controller_endpoint').value,
@@ -105,7 +115,7 @@ table, th, td {
 <label><a href="{{ url_for('debug.main') }}">Debug:</a></label>
 <input type="checkbox" value="true" id="debug">
 <p></p>
-<button onclick="runOnClick()">Run</button>
+<button onclick="runOnClick()">Run</button> <button onclick="stopOnClick()">Stop</button>
 <p></p>
 <table>
     <tr>

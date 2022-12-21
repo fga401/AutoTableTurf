@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from logger import logger
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger import Debugger
 from tableturf.manager.detection import util
 from tableturf.manager.detection.ui import special_on
 from tableturf.model import Stage, Pattern, Grid

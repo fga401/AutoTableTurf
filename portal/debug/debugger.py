@@ -3,7 +3,7 @@ import io
 import cv2
 import numpy as np
 
-from tableturf.debugger.interface import Debugger
+from tableturf.manager.detection.debugger import Debugger
 
 
 class WebDebugger(Debugger):
