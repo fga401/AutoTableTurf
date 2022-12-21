@@ -42,7 +42,7 @@ class Alpha(AI):
         logger.debug(f'tableturf.ai.alpha.next_step: round={status.round}')
         if status.round > 2:
             remaining_cost = sorted([card.sp_cost for card in status.hands + status.my_deck], reverse=True)
-            sp_threshold = min(np.sum(remaining_cost[:2]), 6)
+            sp_threshold = np.sum(remaining_cost[:2]) - 1
             # only can drop cards or special attack
             steps = status.get_possible_steps(action=Step.Action.Place)
             if len(steps) == 0 or status.my_sp >= sp_threshold:
@@ -107,8 +107,8 @@ class Alpha(AI):
     @staticmethod
     def __score_current_stage(status: Status):
         occupied_grids_1 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=1, connectivity=8)
-        occupied_grids_2 = Evaluation.occupied_grids(status.stage, my_dilate=2, his_dilate=1, connectivity=8)
-        occupied_grids_3 = Evaluation.occupied_grids(status.stage, my_dilate=3, his_dilate=1, connectivity=8)
+        occupied_grids_2 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=2, connectivity=8)
+        occupied_grids_3 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=3, connectivity=8)
         conflict_grids = Evaluation.conflict_grids(status.stage, my_dilate=3, his_dilate=3)
         return occupied_grids_1, occupied_grids_2, occupied_grids_3, conflict_grids
 
@@ -117,9 +117,9 @@ class Alpha(AI):
         occupied_grids_1, occupied_grids_2, occupied_grids_3, conflict_grids = current_score
         next_stage = util.estimate_stage(status.stage, step)
         estimated_occupied_grids_1 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=1, connectivity=8) - occupied_grids_1
-        estimated_occupied_grids_2 = Evaluation.occupied_grids(next_stage, my_dilate=2, his_dilate=1, connectivity=8) - occupied_grids_2
-        estimated_occupied_grids_3 = Evaluation.occupied_grids(next_stage, my_dilate=3, his_dilate=1, connectivity=8) - occupied_grids_3
-        estimated_conflict_grids = Evaluation.conflict_grids(next_stage, my_dilate=2, his_dilate=2) - conflict_grids
+        estimated_occupied_grids_2 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=2, connectivity=8) - occupied_grids_2
+        estimated_occupied_grids_3 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=3, connectivity=8) - occupied_grids_3
+        estimated_conflict_grids = Evaluation.conflict_grids(next_stage, my_dilate=3, his_dilate=3) - conflict_grids
         size = Evaluation.ink_size(next_stage)
         my_sp = status.my_sp + util.estimate_my_sp_diff(status.stage, next_stage, step)
         his_sp_diff = util.estimate_his_sp_diff(status.stage, next_stage, step)
@@ -127,7 +127,7 @@ class Alpha(AI):
         pattern = step.card.get_pattern(step.rotate)
         distance = np.min([Evaluation.square_distance(status.stage, pos) for pos in pattern.offset + step.pos])
         if status.round >= 11 and distance > 2:
-            distance = distance * -20
+            distance = distance * -100
         else:
             distance = distance * -1
 
