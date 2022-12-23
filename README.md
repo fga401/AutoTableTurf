@@ -1,6 +1,6 @@
 # AutoTableTurf
 
-Automate the Tableturf game and help you reach Level 50.
+Automate the Tableturf game helping you reach Level 50 and get all sleeves.
 
 ![image](https://user-images.githubusercontent.com/36651740/194977551-2014cff7-5fe4-4964-aad9-7a467aba9aef.png)
 
@@ -8,7 +8,7 @@ Automate the Tableturf game and help you reach Level 50.
 
 - Automated script based on image recognition.
 - Simple web portal.
-- ~~A stupid AI that moves randomly.~~
+- AI that can beat Level 3 NPC.
 
 ## Getting Started
 
@@ -51,8 +51,8 @@ On the web portal:
 - [x] Virtual controller API
 - [x] Screen capturing
 - [x] Screen recognition & Game flow testing
-- [ ] [WIP] Smarter AI
-- [ ] User-friendly interface
+- [x] Smarter AI
+- [x] ~~User-friendly interface~~
 
 ## Credits
 
