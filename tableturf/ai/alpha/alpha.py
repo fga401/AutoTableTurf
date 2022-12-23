@@ -108,7 +108,7 @@ class Alpha(AI):
     def __score_current_stage(status: Status):
         occupied_grids_1 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=1, connectivity=8)
         occupied_grids_2 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=2, connectivity=8)
-        occupied_grids_3 = Evaluation.occupied_grids(status.stage, my_dilate=1, his_dilate=3, connectivity=8)
+        occupied_grids_3 = Evaluation.occupied_grids(status.stage, my_dilate=2, his_dilate=1, connectivity=8)
         conflict_grids = Evaluation.conflict_grids(status.stage, my_dilate=3, his_dilate=3)
         return occupied_grids_1, occupied_grids_2, occupied_grids_3, conflict_grids
 
@@ -118,7 +118,7 @@ class Alpha(AI):
         next_stage = util.estimate_stage(status.stage, step)
         estimated_occupied_grids_1 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=1, connectivity=8) - occupied_grids_1
         estimated_occupied_grids_2 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=2, connectivity=8) - occupied_grids_2
-        estimated_occupied_grids_3 = Evaluation.occupied_grids(next_stage, my_dilate=1, his_dilate=3, connectivity=8) - occupied_grids_3
+        estimated_occupied_grids_3 = Evaluation.occupied_grids(next_stage, my_dilate=2, his_dilate=1, connectivity=8) - occupied_grids_3
         estimated_conflict_grids = Evaluation.conflict_grids(next_stage, my_dilate=3, his_dilate=3) - conflict_grids
         size = Evaluation.ink_size(next_stage)
         my_sp = status.my_sp + util.estimate_my_sp_diff(status.stage, next_stage, step)
@@ -131,7 +131,7 @@ class Alpha(AI):
         else:
             distance = distance * -1
 
-        return estimated_occupied_grids_1, estimated_occupied_grids_2 * 0.7, estimated_occupied_grids_3 * 0.5, estimated_conflict_grids * -1, distance, size, my_sp * 6, his_sp_diff * -4
+        return estimated_occupied_grids_1, estimated_occupied_grids_2 * 0.5, estimated_occupied_grids_3, estimated_conflict_grids * -0.5, distance, size, my_sp * 6, his_sp_diff * -4
 
     @staticmethod
     def __is_good_for_expanding(scores: np.ndarray, steps: List[Step]) -> bool:
@@ -161,7 +161,7 @@ class Alpha(AI):
             distance = 0
             if remaining_sp_card <= 1:
                 sp_card_penalty = -18
-            elif remaining_sp_card <= 2:
+            elif remaining_sp_card <= 2 and status.my_sp + status.round >= 6:
                 sp_card_penalty = -12
 
         return my_sp * 6, area, estimated_occupied_grids_1 * 0.6, distance * -0.01, his_sp_diff * -4, sp_card_penalty, dilated_area * -0.1
@@ -225,14 +225,14 @@ class Evaluation:
         Return the number of occupied squares that is not connected with opponent's squares.
         """
         grid = stage.grid.copy()
-        if his_dilate > 0:
+        for _ in range(his_dilate):
             his_mask = (np.bitwise_and(grid, Grid.HisInk.value | Grid.HisSpecial.value) > 0).astype(np.uint8) * 255
-            his_mask = cv2.dilate(his_mask, kernel=np.ones((his_dilate * 2 + 1, his_dilate * 2 + 1), dtype=np.uint8))
+            his_mask = cv2.dilate(his_mask, kernel=np.ones((3, 3), dtype=np.uint8))
             his_mask = np.bitwise_and(his_mask == 255, grid == Grid.Empty.value)
             grid[his_mask] = Grid.HisInk.value
-        if my_dilate > 0:
+        for _ in range(my_dilate):
             my_mask = (np.bitwise_and(grid, Grid.MyInk.value | Grid.MySpecial.value) > 0).astype(np.uint8) * 255
-            my_mask = cv2.dilate(my_mask, kernel=np.ones((my_dilate * 2 + 1, my_dilate * 2 + 1), dtype=np.uint8))
+            my_mask = cv2.dilate(my_mask, kernel=np.ones((3, 3), dtype=np.uint8))
             my_mask = np.bitwise_and(my_mask == 255, grid == Grid.Empty.value)
             grid[my_mask] = Grid.MyInk.value
         his_ink_idx = np.argwhere(np.bitwise_and(grid, Grid.HisInk.value | Grid.HisSpecial.value))
@@ -271,10 +271,13 @@ class Evaluation:
 
     @staticmethod
     def dilated_area(stage: Stage, dilate=1):
-        mask = (np.bitwise_and(stage.grid, Grid.MyInk.value | Grid.MySpecial.value) > 0).astype(np.uint8) * 255
-        mask = cv2.dilate(mask, kernel=np.ones((dilate * 2 + 1, dilate * 2 + 1), dtype=np.uint8))
-        mask = np.bitwise_and(mask == 255, stage.grid == Grid.Empty.value)
-        return np.sum(mask) + len(stage.my_ink)
+        grid = stage.grid.copy()
+        for _ in range(dilate):
+            mask = (np.bitwise_and(grid, Grid.MyInk.value | Grid.MySpecial.value) > 0).astype(np.uint8) * 255
+            mask = cv2.dilate(mask, kernel=np.ones((3, 3), dtype=np.uint8))
+            mask = np.bitwise_and(mask == 255, grid == Grid.Empty.value)
+            grid[mask] = Grid.MyInk.value
+        return np.sum(np.bitwise_and(grid, Grid.MyInk.value | Grid.MySpecial.value) > 0)
 
     @staticmethod
     def ink_size(stage: Stage) -> float:
