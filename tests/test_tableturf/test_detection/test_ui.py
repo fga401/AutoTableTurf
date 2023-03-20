@@ -39,3 +39,8 @@ class TestUI(unittest.TestCase):
         capture = FileLoader(path=os.path.join(path, 'replay'))
         for _ in range(10):
             detection.replay_cursor(capture.capture(), OpenCVDebugger())
+
+    def test_lose(self):
+        capture = FileLoader(path=os.path.join(path, 'result'))
+        for _ in range(10):
+            detection.lose(capture.capture(), OpenCVDebugger())

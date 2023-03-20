@@ -148,3 +148,50 @@ def replay_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
     )
     logger.debug(f'detection.replay_cursor: return={pos}')
     return pos
+
+
+GIVEUP_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[760, 705], [760, 1050]])
+GIVEUP_CURSOR_ROI_WIDTH = 180
+GIVEUP_CURSOR_ROI_HEIGHT = 70
+GIVEUP_CURSOR_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
+GIVEUP_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
+GIVEUP_CURSOR_PIXEL_RATIO = 0.5
+
+
+def giveup_cursor(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
+    pos = util.detect_cursor(
+        img,
+        GIVEUP_CURSOR_NUMPY_ROI_TOP_LEFTS,
+        GIVEUP_CURSOR_ROI_WIDTH,
+        GIVEUP_CURSOR_ROI_HEIGHT,
+        [(GIVEUP_CURSOR_COLOR_HSV_LOWER_BOUND, GIVEUP_CURSOR_COLOR_HSV_UPPER_BOUND)],
+        GIVEUP_CURSOR_PIXEL_RATIO,
+        debug,
+        'giveup_cursor'
+    )
+    logger.debug(f'detection.giveup_cursor: return={pos}')
+    return pos
+
+
+LOSE_NUMPY_ROI_TOP_LEFTS = np.array([[660, 320]])
+LOSE_ROI_WIDTH = 8
+LOSE_ROI_HEIGHT = 8
+LOSE_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
+LOSE_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
+LOSE_PIXEL_RATIO = 0.6
+
+
+def lose(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
+    pos = util.detect_cursor(
+        img,
+        LOSE_NUMPY_ROI_TOP_LEFTS,
+        LOSE_ROI_WIDTH,
+        LOSE_ROI_HEIGHT,
+        [(LOSE_COLOR_HSV_LOWER_BOUND, LOSE_COLOR_HSV_UPPER_BOUND)],
+        GIVEUP_CURSOR_PIXEL_RATIO,
+        debug,
+        'lose'
+    )
+    result = pos == 0
+    logger.debug(f'detection.lose: return={result}')
+    return result

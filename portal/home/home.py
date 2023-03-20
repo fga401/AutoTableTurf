@@ -13,7 +13,7 @@ from portal.home.capture import ThreadSafeCapture
 from portal.home.closer import WebCloser
 from portal.home.keymap import keymap
 from tableturf.ai.alpha import Alpha
-from tableturf.manager import TableTurfManager, Closer
+from tableturf.manager import TableTurfManager, Closer, StatsCloser
 
 
 def list_available_source():
@@ -63,7 +63,7 @@ def run():
         closer = WebCloser()
     manager.run(
         deck=deck,
-        closer=closer,
+        closer=StatsCloser(max_win=3),
         debug=debug
     )
     closer = None

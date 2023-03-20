@@ -15,7 +15,7 @@ from tableturf.manager.detection.debugger import Debugger
 from tableturf.manager import action
 from tableturf.manager.closer import Closer
 from tableturf.manager import detection
-from tableturf.manager.data import Stats, Result
+from tableturf.manager.data import Stats
 from tableturf.model import Status, Card, Step, Stage, Grid
 
 
@@ -82,9 +82,11 @@ class TableTurfManager:
             for round in range(12, 0, -1):
                 status = self.__get_status(round)
                 step = self.__ai.next_step(status)
-                self.__move(status, step)
-            result = self.__get_result()
-            self.__update_stats(result)
+                force_restart = self.__move(status, step)
+                if force_restart:
+                    self.__give_up()
+                    break
+            self.__update_stats()
             close = closer.close(self.stats)
             self.__close(close)
             if close:
@@ -169,7 +171,7 @@ class TableTurfManager:
             macro = action.move_hands_cursor_marco(target, current)
             self.__controller.macro(macro)
 
-    def __move(self, status: Status, step: Step):
+    def __move(self, status: Status, step: Step) -> Optional[bool]:
         if step.action == step.Action.Skip:
             self.__move_hands_cursor(4)
             while not self.__multi_detect(detection.skip)(debug=self.__session['debug']):
@@ -209,11 +211,17 @@ class TableTurfManager:
         # move card
         expected_preview = step.card.get_pattern(step.rotate)
         # in case missing Button.A command
-        while True:
+        for x in range(11):
+            if x == 10:
+                return True
             # keep moving until preview is in the target position
-            while True:
+            for y in range(11):
+                if y == 10:
+                    return True
                 # keep detecting until preview is found
-                while True:
+                for z in range(11):
+                    if z == 10:
+                        return True
                     preview, current_index = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
                     if action.compare_pattern(preview, expected_preview):
                         break
@@ -226,7 +234,7 @@ class TableTurfManager:
             self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
             sleep(3)
             # flow didn't go ahead -> card was not placed -> randomly move and re-detect
-            for i in range(25):
+            for i in range(10):
                 if status.round == 1:
                     preview, _ = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
                     if preview is None or np.all(preview.squares == Grid.MySpecial.value):
@@ -235,16 +243,28 @@ class TableTurfManager:
                     return
                 sleep(0.5)
             disturbance = random.choice([Controller.Button.DPAD_RIGHT, Controller.Button.DPAD_UP, Controller.Button.DPAD_LEFT, Controller.Button.DPAD_DOWN])
-            self.__controller.press_buttons([disturbance])
+            self.__controller.press_buttons([disturbance] * 2)
 
-    def __get_result(self) -> Result:
-        # TODO
+    def __give_up(self):
+        self.__controller.press_buttons([Controller.Button.PLUS])
+        self.__controller.press_buttons([Controller.Button.PLUS])  # in case command is lost
+        target = 1
+        while True:
+            current = self.__multi_detect(detection.giveup_cursor)(debug=self.__session['debug'])
+            if current == target:
+                break
+            macro = action.move_giveup_cursor_marco(target, current)
+            self.__controller.macro(macro)
+        self.__controller.press_buttons([Controller.Button.A])
+        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        sleep(2)
+        self.__controller.press_buttons([Controller.Button.A])
+        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+
+    def __update_stats(self):
         sleep(10)
-        img = self.__capture()
-        return Result(0, 0)
-
-    def __update_stats(self, result: Result):
-        if result.my_ink > result.his_ink:
+        lose = self.__multi_detect(detection.lose)(debug=self.__session['debug'])
+        if not lose:
             self.stats.win += 1
         now = datetime.now().timestamp()
         self.stats.time = now - self.stats.start_time

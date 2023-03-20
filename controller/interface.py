@@ -36,7 +36,7 @@ class Controller(ABC):
         L_STICK = 'L_STICK'
 
     @abstractmethod
-    def press_buttons(self, buttons: List[Button], down: float = 0.1, up: float = 0.1, block=True) -> bool:
+    def press_buttons(self, buttons: List[Button], down: float = 0.08, up: float = 0.08, block=True) -> bool:
         raise NotImplementedError
 
     @abstractmethod

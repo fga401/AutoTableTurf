@@ -10,15 +10,3 @@ class Stats:
 
     def __str__(self):
         return repr(self)
-
-
-class Result:
-    def __init__(self, my_ink: int, his_ink: int):
-        self.my_ink = my_ink
-        self.his_ink = his_ink
-
-    def __repr__(self):
-        return f'Result(my_ink={self.my_ink}, his_ink={self.his_ink})'
-
-    def __str__(self):
-        return repr(self)
