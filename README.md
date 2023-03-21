@@ -1,14 +1,14 @@
 # AutoTableTurf
 
-Automate the Tableturf game helping you reach Level 50 and get all sleeves.
+Automate the Tableturf game helping you reach Level 50 and get all sleeves. The script is based on image recognition and bluetooth emulator to auto play Tableturf.
 
 ![image](https://user-images.githubusercontent.com/36651740/194977551-2014cff7-5fe4-4964-aad9-7a467aba9aef.png)
 
 ## Features
 
-- Automated script based on image recognition.
 - Simple web portal.
 - AI that can beat Level 3 NPC.
+- Complete flow control. Once win a NPC 30 times, auto switch to the next one.
 
 ## Getting Started
 
@@ -40,11 +40,36 @@ On the web portal:
 1. enter the virtual controller server endpoint and click `Connect`. If successful, you can control your Switch by
    keyboard.
 2. Choose the correct webcam whose source is Switch.
-3. Enter deck selection interface in Tableturf.
-4. Choose the deck you want to use.
+3. Write the profile on the right side.
+4. [Optional] Set the timer to auto stop. Also, you can check the checkbox `Turn off Switch after stop`.
 5. Click 'Run'.
 
-![2022-11-28 22_16_36-](https://user-images.githubusercontent.com/36651740/204300430-a0051a0e-3617-4fca-96cc-f8c6dbd25227.png)
+![image](https://user-images.githubusercontent.com/36651740/226627357-4169bf07-ee44-4739-915c-4413efcae0fe.png)
+
+Profile example:
+```json
+[
+  {
+    "current_level": 1,
+    "current_win": 2,
+    "target_level": 3,
+    "target_win": 30,
+    "deck": 0
+  },
+  {
+    "current_level": 3,
+    "current_win": 12,
+    "target_level": 3,
+    "target_win": 30,
+    "deck": 1
+  }
+]
+```
+Each block represents the configuration of an NPC. The above profile performs the following actions:
+1. Use Deck 0 to play against the first NPC Level 1 until one win.
+2. Use Deck 0 to play against the first NPC Level 2 until three wins.
+3. Use Deck 0 to play against the first NPC Level 3 until thirty wins.
+4. Use Deck 1 to play against the second NPC Level 3 until eighteen wins.
 
 ## Plan
 
@@ -52,7 +77,7 @@ On the web portal:
 - [x] Screen capturing
 - [x] Screen recognition & Game flow testing
 - [x] Smarter AI
-- [x] ~~User-friendly interface~~
+- [x] User-friendly interface
 
 ## Credits
 
