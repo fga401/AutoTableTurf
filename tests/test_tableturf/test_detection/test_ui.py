@@ -44,3 +44,13 @@ class TestUI(unittest.TestCase):
         capture = FileLoader(path=os.path.join(path, 'result'))
         for _ in range(10):
             detection.lose(capture.capture(), OpenCVDebugger())
+
+    def test_level(self):
+        capture = FileLoader(path=os.path.join(path, 'level'))
+        for _ in range(10):
+            detection.level(capture.capture(), OpenCVDebugger())
+
+    def test_start(self):
+        capture = FileLoader(path=os.path.join(path, 'level'))
+        for _ in range(10):
+            detection.start(capture.capture(), OpenCVDebugger())

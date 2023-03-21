@@ -5,6 +5,10 @@ table, th, td {
   border-collapse: collapse;
 }
 
+textarea {
+  width: 300px;
+  height: 715px;
+}
 
 </style>
 <script>
@@ -55,7 +59,9 @@ table, th, td {
     function runOnClick() {
         const params = {
             debug: document.getElementById('debug').checked,
-            deck: parseInt(document.getElementById('deck').value)
+            sleep: document.getElementById('sleep').checked,
+            profile: document.getElementById('profile').value,
+            stop_at: document.getElementById('stop_at').value,
         };
         const options = {
             method: 'POST',
@@ -91,13 +97,35 @@ table, th, td {
         fetch('{{ url_for('home.connect_controller') }}', options).then((response) => connected = true)
     }
 
+    var default_profile = `[
+  {
+    "current_level": 2,
+    "current_win": 0,
+    "target_level": 3,
+    "target_win": 30,
+    "deck": 0
+  },
+  {
+    "current_level": 2,
+    "current_win": 0,
+    "target_level": 3,
+    "target_win": 30,
+    "deck": 0
+  }
+]`;
+    window.onload = function () {
+        document.getElementById('profile').value = default_profile;
+    }
+
 
 </script>
 <body>
 <label>Controller Endpoint:</label>
 <input type="url" id="controller_endpoint" value="http://192.168.50.101:5000/">
 <button onclick="connectOnClick()">Connect</button>
+
 <p></p>
+
 <label>Screen Source: </label>
 <select name="sources" id="sources" onchange="sourceOnChange(this)">
     {% for source in sources %}
@@ -105,17 +133,32 @@ table, th, td {
     {% endfor %}
 </select>
 </body>
+
 <p></p>
+
 <body>
-<img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
+<div class="display-flex">
+    <img src="{{ url_for('home.video_feed') }}" width="1280" height="720"/>
+    <textarea id="profile"></textarea>
+</div>
 </body>
+
 <p></p>
-<label>Deck:</label>
-<input type="number" min="0" max="15" id="deck" value="0">
-<label><a href="{{ url_for('debug.main') }}">Debug:</a></label>
+
+<label>Stop at:</label>
+<input type="datetime-local" id="stop_at">
+
+<p></p>
+
+<button onclick="runOnClick()">Run</button>
+<button onclick="stopOnClick()">Stop</button>
+<input type="checkbox" value="true" id="sleep">
+<label>Turn off Switch after stop.</label>
+
+<p></p>
 <input type="checkbox" value="true" id="debug">
-<p></p>
-<button onclick="runOnClick()">Run</button> <button onclick="stopOnClick()">Stop</button>
+<label><a href="{{ url_for('debug.main') }}">Debug</a></label>
+
 <p></p>
 <table>
     <tr>

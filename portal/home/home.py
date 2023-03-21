@@ -1,3 +1,4 @@
+import datetime
 import io
 from typing import Optional
 
@@ -13,7 +14,7 @@ from portal.home.capture import ThreadSafeCapture
 from portal.home.closer import WebCloser
 from portal.home.keymap import keymap
 from tableturf.ai.alpha import Alpha
-from tableturf.manager import TableTurfManager, Closer, StatsCloser
+from tableturf.manager import TableTurfManager, Profile
 
 
 def list_available_source():
@@ -50,8 +51,14 @@ def main():
 def run():
     global closer
     debug = request.json['debug']
-    deck = int(request.json['deck'])
-    logger.debug(f'portal.home.run: deck={deck}, debug={debug}')
+    sleep = request.json['sleep']
+    profile = request.json['profile']
+    stop_at = request.json['stop_at']
+    try:
+        time = datetime.datetime.fromisoformat(stop_at)
+    except:
+        time = None
+    logger.debug(f'portal.home.run: profile={profile}, sleep={sleep}, debug={debug}, stop_at={stop_at}')
     alpha_ai = Alpha()
     manager = TableTurfManager(
         capture,
@@ -60,13 +67,12 @@ def run():
         web_debugger,
     )
     if closer is None:
-        closer = WebCloser()
-    manager.run(
-        deck=deck,
-        closer=StatsCloser(max_win=3),
-        debug=debug
-    )
+        closer = WebCloser(time)
+    manager.run(profile=Profile.from_json(profile), closer=closer, debug=debug)
     closer = None
+    if sleep:
+        controller.press_buttons([Controller.Button.HOME], down=3)
+        controller.press_buttons([Controller.Button.A])
     return Response()
 
 

@@ -195,3 +195,51 @@ def lose(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
     result = pos == 0
     logger.debug(f'detection.lose: return={result}')
     return result
+
+
+LEVEL_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[525, 1375]])
+LEVEL_CURSOR_ROI_WIDTH = 10
+LEVEL_CURSOR_ROI_HEIGHT = 10
+LEVEL_CURSOR_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
+LEVEL_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
+LEVEL_CURSOR_PIXEL_RATIO = 0.5
+
+
+def level(img: np.ndarray, debug: Optional[Debugger] = None) -> bool:
+    pos = util.detect_cursor(
+        img,
+        LEVEL_CURSOR_NUMPY_ROI_TOP_LEFTS,
+        LEVEL_CURSOR_ROI_WIDTH,
+        LEVEL_CURSOR_ROI_HEIGHT,
+        [(LEVEL_CURSOR_COLOR_HSV_LOWER_BOUND, LEVEL_CURSOR_COLOR_HSV_UPPER_BOUND)],
+        LEVEL_CURSOR_PIXEL_RATIO,
+        debug,
+        'level'
+    )
+    result = pos == 0
+    logger.debug(f'detection.level_cursor: return={result}')
+    return result
+
+
+START_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[640, 1430]])
+START_CURSOR_ROI_WIDTH = 180
+START_CURSOR_ROI_HEIGHT = 70
+START_CURSOR_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
+START_CURSOR_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
+START_CURSOR_PIXEL_RATIO = 0.5
+
+
+def start(img: np.ndarray, debug: Optional[Debugger] = None) -> bool:
+    pos = util.detect_cursor(
+        img,
+        START_CURSOR_NUMPY_ROI_TOP_LEFTS,
+        START_CURSOR_ROI_WIDTH,
+        START_CURSOR_ROI_HEIGHT,
+        [(START_CURSOR_COLOR_HSV_LOWER_BOUND, START_CURSOR_COLOR_HSV_UPPER_BOUND)],
+        START_CURSOR_PIXEL_RATIO,
+        debug,
+        'start'
+    )
+    result = pos == 0
+    logger.debug(f'detection.start_cursor: return={result}')
+    return result

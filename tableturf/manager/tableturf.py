@@ -11,11 +11,11 @@ from capture import Capture
 from controller import Controller
 from logger import logger
 from tableturf.ai import AI
-from tableturf.manager.detection.debugger import Debugger
 from tableturf.manager import action
-from tableturf.manager.closer import Closer
 from tableturf.manager import detection
-from tableturf.manager.data import Stats
+from tableturf.manager.closer import Closer, TaskStatsCloser, UnionCloser
+from tableturf.manager.data import TaskStats, Profile, JobStats
+from tableturf.manager.detection.debugger import Debugger
 from tableturf.model import Status, Card, Step, Stage, Grid
 
 
@@ -64,16 +64,51 @@ class TableTurfManager:
         self.__controller = controller
         self.__ai = ai
         self.__debugger = debugger
-        self.stats = Stats()
+        self.job_stats = JobStats()
         self.__session = dict()
 
-    def run(self, deck: int, stage: Optional[Stage] = None, his_deck: Optional[List[Card]] = None, closer: Closer = Closer(), debug=False):
+    def run(self, profile: Profile, closer: Closer = None, debug=False):
+        self.__session = {
+            'debug': self.__debugger if debug else None,
+        }
+        self.job_stats = JobStats()
+        for task in profile.tasks:
+            if task.current_level < task.target_level or (task.current_level == task.target_level and task.current_win < task.target_win):
+                self.__start()
+            current_level = task.current_level
+            current_win = task.current_win
+            while current_level < task.target_level:
+                if current_level < 3:
+                    to_win = 3 - current_win
+                    if to_win > 0:
+                        task_closer = TaskStatsCloser(max_win=to_win)
+                        if closer is not None:
+                            task_closer = UnionCloser(closer, task_closer)
+                        self.run_once(task.deck, closer=task_closer, debug=debug)
+                        if closer.close(self.job_stats):
+                            return
+                current_level += 1
+                current_win = 0
+                self.__switch_level()
+            to_win = task.target_win - current_win
+            if to_win > 0:
+                task_closer = TaskStatsCloser(max_win=to_win)
+                if closer is not None:
+                    task_closer = UnionCloser(closer, task_closer)
+                self.run_once(task.deck, closer=task_closer, debug=debug)
+                if closer.close(self.job_stats):
+                    return
+            self.__switch_npc()
+            self.job_stats.task_id += 1
+
+    def run_once(self, deck: int, stage: Optional[Stage] = None, his_deck: Optional[List[Card]] = None, closer: Closer = Closer(), debug=False):
         self.__session = {
             'empty_stage': stage,
             'his_deck': his_deck,
             'debug': self.__debugger if debug else None,
         }
-        self.stats.start_time = datetime.now().timestamp()
+        self.job_stats.task_stats = TaskStats()
+        self.job_stats.task_stats.start_time = datetime.now().timestamp()
         while True:
             self.__init_battle()
             self.__select_deck(deck)
@@ -87,7 +122,7 @@ class TableTurfManager:
                     self.__give_up()
                     break
             self.__update_stats()
-            close = closer.close(self.stats)
+            close = closer.close(self.job_stats)
             self.__close(close)
             if close:
                 break
@@ -211,17 +246,11 @@ class TableTurfManager:
         # move card
         expected_preview = step.card.get_pattern(step.rotate)
         # in case missing Button.A command
-        for x in range(11):
-            if x == 10:
-                return True
+        for x in range(10):
             # keep moving until preview is in the target position
-            for y in range(11):
-                if y == 10:
-                    return True
+            for y in range(10):
                 # keep detecting until preview is found
-                for z in range(11):
-                    if z == 10:
-                        return True
+                for z in range(10):
                     preview, current_index = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
                     if action.compare_pattern(preview, expected_preview):
                         break
@@ -234,7 +263,7 @@ class TableTurfManager:
             self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
             sleep(3)
             # flow didn't go ahead -> card was not placed -> randomly move and re-detect
-            for i in range(10):
+            for i in range(25):
                 if status.round == 1:
                     preview, _ = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
                     if preview is None or np.all(preview.squares == Grid.MySpecial.value):
@@ -244,6 +273,7 @@ class TableTurfManager:
                 sleep(0.5)
             disturbance = random.choice([Controller.Button.DPAD_RIGHT, Controller.Button.DPAD_UP, Controller.Button.DPAD_LEFT, Controller.Button.DPAD_DOWN])
             self.__controller.press_buttons([disturbance] * 2)
+        return True
 
     def __give_up(self):
         self.__controller.press_buttons([Controller.Button.PLUS])
@@ -265,11 +295,11 @@ class TableTurfManager:
         sleep(10)
         lose = self.__multi_detect(detection.lose)(debug=self.__session['debug'])
         if not lose:
-            self.stats.win += 1
+            self.job_stats.task_stats.win += 1
         now = datetime.now().timestamp()
-        self.stats.time = now - self.stats.start_time
-        self.stats.battle += 1
-        logger.debug(f'tableturf.update_stats: stats={self.stats}')
+        self.job_stats.time = now - self.job_stats.task_stats.start_time
+        self.job_stats.task_stats.battle += 1
+        logger.debug(f'tableturf.update_stats: stats={self.job_stats}')
 
     def __close(self, close: bool):
         self.__controller.press_buttons([Controller.Button.A])
@@ -291,3 +321,40 @@ class TableTurfManager:
                 self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+
+    def __start(self):
+        while not self.__multi_detect(detection.level)(debug=self.__session['debug']):
+            self.__controller.press_buttons([Controller.Button.A])
+            sleep(2)
+        while not self.__multi_detect(detection.start)(debug=self.__session['debug']):
+            self.__controller.press_buttons([Controller.Button.DPAD_DOWN])
+            sleep(0.5)
+        self.__controller.press_buttons([Controller.Button.A])
+        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
+            self.__controller.press_buttons([Controller.Button.A])
+            sleep(0.5)
+
+    def __switch_level(self):
+        sleep(3)
+        while not self.__multi_detect(detection.level)(debug=self.__session['debug']):
+            self.__controller.press_buttons([Controller.Button.A])
+            sleep(2)
+        while not self.__multi_detect(detection.start)(debug=self.__session['debug']):
+            self.__controller.press_buttons([Controller.Button.DPAD_DOWN])
+            sleep(0.5)
+        self.__controller.press_buttons([Controller.Button.A])
+        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
+            self.__controller.press_buttons([Controller.Button.A])
+            sleep(0.5)
+
+    def __switch_npc(self):
+        sleep(3)
+        while not self.__multi_detect(detection.level)(debug=self.__session['debug']):
+            self.__controller.press_buttons([Controller.Button.A])
+            sleep(2)
+        self.__controller.press_buttons([Controller.Button.B])
+        self.__controller.press_buttons([Controller.Button.B])  # in case command is lost
+        sleep(2)
+        self.__controller.press_buttons([Controller.Button.DPAD_DOWN])

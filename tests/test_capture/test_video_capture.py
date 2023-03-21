@@ -26,6 +26,6 @@ class TestCard(unittest.TestCase):
     def test_save(self):
         cur = os.path.dirname(os.path.realpath(__file__))
         root = os.path.join(cur, os.pardir, os.pardir)
-        target = os.path.join(root, 'temp', 'result', 'win')
+        target = os.path.join(root, 'temp', 'level', '3')
         print(target)
         self.capture.save(target)

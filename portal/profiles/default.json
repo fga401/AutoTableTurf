@@ -1,0 +1,16 @@
+[
+  {
+    "current_level": 2,
+    "current_win": 2,
+    "target_level": 2,
+    "target_win": 3,
+    "deck": 3
+  },
+  {
+    "current_level": 1,
+    "current_win": 0,
+    "target_level": 3,
+    "target_win": 1,
+    "deck": 3
+  }
+]
