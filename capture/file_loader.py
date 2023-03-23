@@ -24,6 +24,9 @@ class FileLoader(Capture):
     def capture(self) -> np.ndarray:
         frame = cv2.imread(self.__files[self.__idx])
         self.__idx = (self.__idx + 1) % len(self.__files)
+        height, width, _ = frame.shape
+        if height != 1080 or width != 1920:
+            frame = cv2.resize(frame, (1920, 1080))
         return frame
 
     def close(self):

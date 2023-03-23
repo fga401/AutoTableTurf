@@ -3,8 +3,9 @@ from typing import Optional
 import numpy as np
 
 from logger import logger
-from tableturf.manager.detection.debugger import Debugger
+from tableturf.manager.data import Result
 from tableturf.manager.detection import util
+from tableturf.manager.detection.debugger import Debugger
 
 DECK_CURSOR_ROI_TOP_LEFT = np.array([285, 450])
 DECK_CURSOR_ROI_TOP = 285
@@ -180,21 +181,42 @@ LOSE_COLOR_HSV_UPPER_BOUND = (50, 255, 255)
 LOSE_COLOR_HSV_LOWER_BOUND = (30, 100, 150)
 LOSE_PIXEL_RATIO = 0.6
 
+DRAW_NUMPY_ROI_TOP_LEFTS = np.array([[640, 300]])
+DRAW_ROI_WIDTH = 8
+DRAW_ROI_HEIGHT = 8
+DRAW_COLOR_HSV_UPPER_BOUND = (255, 255, 255)
+DRAW_COLOR_HSV_LOWER_BOUND = (0, 0, 230)
+DRAW_PIXEL_RATIO = 0.6
 
-def lose(img: np.ndarray, debug: Optional[Debugger] = None) -> int:
-    pos = util.detect_cursor(
+
+def result(img: np.ndarray, debug: Optional[Debugger] = None) -> Result:
+    ret = Result.Win
+    loss = util.detect_cursor(
         img,
         LOSE_NUMPY_ROI_TOP_LEFTS,
         LOSE_ROI_WIDTH,
         LOSE_ROI_HEIGHT,
         [(LOSE_COLOR_HSV_LOWER_BOUND, LOSE_COLOR_HSV_UPPER_BOUND)],
-        GIVEUP_CURSOR_PIXEL_RATIO,
+        LOSE_PIXEL_RATIO,
         debug,
         'lose'
     )
-    result = pos == 0
-    logger.debug(f'detection.lose: return={result}')
-    return result
+    draw = util.detect_cursor(
+        img,
+        DRAW_NUMPY_ROI_TOP_LEFTS,
+        DRAW_ROI_WIDTH,
+        DRAW_ROI_HEIGHT,
+        [(DRAW_COLOR_HSV_LOWER_BOUND, DRAW_COLOR_HSV_UPPER_BOUND)],
+        DRAW_PIXEL_RATIO,
+        debug,
+        'draw'
+    )
+    if loss == 0:
+        ret = Result.Loss
+    if draw == 0:
+        ret = Result.Draw
+    logger.debug(f'detection.result: return={ret}')
+    return ret
 
 
 LEVEL_CURSOR_NUMPY_ROI_TOP_LEFTS = np.array([[525, 1375]])

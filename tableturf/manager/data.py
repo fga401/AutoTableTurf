@@ -1,5 +1,12 @@
 import json
 from dataclasses import dataclass
+from enum import Enum
+
+
+class Result(Enum):
+    Win = 'win'
+    Loss = 'loss'
+    Draw = 'draw'
 
 
 class JobStats:

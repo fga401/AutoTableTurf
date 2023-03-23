@@ -14,7 +14,7 @@ from tableturf.ai import AI
 from tableturf.manager import action
 from tableturf.manager import detection
 from tableturf.manager.closer import Closer, TaskStatsCloser, UnionCloser
-from tableturf.manager.data import TaskStats, Profile, JobStats
+from tableturf.manager.data import TaskStats, Profile, JobStats, Result
 from tableturf.manager.detection.debugger import Debugger
 from tableturf.model import Status, Card, Step, Stage, Grid
 
@@ -296,8 +296,8 @@ class TableTurfManager:
 
     def __update_stats(self):
         sleep(10)
-        lose = self.__multi_detect(detection.lose)(debug=self.__session['debug'])
-        if not lose:
+        result = self.__multi_detect(detection.result)(debug=self.__session['debug'])
+        if result == Result.Win:
             self.job_stats.task_stats.win += 1
         now = datetime.now().timestamp()
         self.job_stats.time = now - self.job_stats.task_stats.start_time

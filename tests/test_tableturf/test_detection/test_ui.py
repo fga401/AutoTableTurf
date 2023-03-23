@@ -40,10 +40,10 @@ class TestUI(unittest.TestCase):
         for _ in range(10):
             detection.replay_cursor(capture.capture(), OpenCVDebugger())
 
-    def test_lose(self):
+    def test_result(self):
         capture = FileLoader(path=os.path.join(path, 'result'))
         for _ in range(10):
-            detection.lose(capture.capture(), OpenCVDebugger())
+            detection.result(capture.capture(), OpenCVDebugger())
 
     def test_level(self):
         capture = FileLoader(path=os.path.join(path, 'level'))
