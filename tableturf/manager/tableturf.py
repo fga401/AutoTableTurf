@@ -90,14 +90,15 @@ class TableTurfManager:
                 current_level += 1
                 current_win = 0
                 self.__switch_level()
-            to_win = task.target_win - current_win
-            if to_win > 0:
-                task_closer = TaskStatsCloser(max_win=to_win)
-                if closer is not None:
-                    task_closer = UnionCloser(closer, task_closer)
-                self.run_once(task.deck, closer=task_closer, debug=debug)
-                if closer.close(self.job_stats):
-                    return
+            if current_level == task.target_level:
+                to_win = task.target_win - current_win
+                if to_win > 0:
+                    task_closer = TaskStatsCloser(max_win=to_win)
+                    if closer is not None:
+                        task_closer = UnionCloser(closer, task_closer)
+                    self.run_once(task.deck, closer=task_closer, debug=debug)
+                    if closer.close(self.job_stats):
+                        return
             self.__switch_npc()
             self.job_stats.task_id += 1
 
@@ -223,7 +224,9 @@ class TableTurfManager:
         # select card
         self.__move_hands_cursor(status.hands.index(step.card))
         expected_preview = step.card.get_pattern(0)
-        while True:
+        for x in range(51):
+            if x == 50:
+                return True
             self.__controller.press_buttons([Controller.Button.A])
             preview, current_index = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
             if action.compare_pattern(preview, expected_preview):
@@ -331,9 +334,9 @@ class TableTurfManager:
             sleep(0.5)
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
-        while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
-            self.__controller.press_buttons([Controller.Button.A])
-            sleep(0.5)
+        # while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
+        #     self.__controller.press_buttons([Controller.Button.A])
+        #     sleep(0.5)
 
     def __switch_level(self):
         sleep(3)
@@ -345,9 +348,9 @@ class TableTurfManager:
             sleep(0.5)
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
-        while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
-            self.__controller.press_buttons([Controller.Button.A])
-            sleep(0.5)
+        # while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
+        #     self.__controller.press_buttons([Controller.Button.A])
+        #     sleep(0.5)
 
     def __switch_npc(self):
         sleep(3)
