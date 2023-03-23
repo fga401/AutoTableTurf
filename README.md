@@ -41,7 +41,7 @@ On the web portal:
    keyboard.
 2. Choose the correct webcam whose source is Switch.
 3. Write the profile on the right side.
-4. Go to the NPC selection page
+4. Go to the NPC selection page.
 5. [Optional] Set the timer to auto stop. Also, you can check the checkbox `Turn off Switch after stop`.
 6. Click 'Run'.
 
