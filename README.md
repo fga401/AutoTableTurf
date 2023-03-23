@@ -72,6 +72,10 @@ Each block represents the configuration of an NPC. The above profile performs th
 3. Use Deck 0 to play against the first NPC Level 3 until thirty wins.
 4. Use Deck 1 to play against the second NPC Level 3 until eighteen wins.
 
+## Demo
+1. [Splatoon3 AutoTableTurf Demo (1/2)](https://youtu.be/6ZauIWV1sGA)
+2. [Splatoon3 AutoTableTurf Demo (2/2)](https://youtu.be/AXANkU0uDiA)
+
 ## Plan
 
 - [x] Virtual controller API
