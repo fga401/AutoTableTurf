@@ -235,7 +235,9 @@ class TableTurfManager:
         if step.rotate > 0:
             target_rotate = step.rotate
             all_patterns = [step.card.get_pattern(i) for i in range(4)]
-            while True:
+            for x in range(21):
+                if x == 20:
+                    return True
                 actual, _ = self.__multi_detect(detection.preview)(stage=status.stage, rois=self.__session['rois'], roi_width=self.__session['roi_width'], roi_height=self.__session['roi_height'], debug=self.__session['debug'])
                 current_rotate = np.argmax([pattern == actual for pattern in all_patterns])
                 if current_rotate == 0 and all_patterns[0] != actual:
@@ -306,7 +308,6 @@ class TableTurfManager:
 
     def __close(self, close: bool):
         self.__controller.press_buttons([Controller.Button.A])
-        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
         target = 0 if close else 1
         count = 0
         while True:
