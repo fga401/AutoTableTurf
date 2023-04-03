@@ -87,9 +87,9 @@ class TableTurfManager:
                         self.run_once(task.deck, closer=task_closer, debug=debug)
                         if closer.close(self.job_stats):
                             return
+                        self.__switch_level()
                 current_level += 1
                 current_win = 0
-                self.__switch_level()
             if current_level == task.target_level:
                 to_win = task.target_win - current_win
                 if to_win > 0:
@@ -310,7 +310,7 @@ class TableTurfManager:
         self.__controller.press_buttons([Controller.Button.A])
         target = 0 if close else 1
         count = 0
-        while True:
+        for i in range(101):
             current = self.__multi_detect(detection.replay_cursor)(debug=self.__session['debug'])
             if current == target:
                 break
@@ -330,11 +330,14 @@ class TableTurfManager:
         while not self.__multi_detect(detection.level)(debug=self.__session['debug']):
             self.__controller.press_buttons([Controller.Button.A])
             sleep(2)
+        self.__controller.press_buttons([Controller.Button.DPAD_RIGHT])
+        self.__controller.press_buttons([Controller.Button.DPAD_RIGHT])
         while not self.__multi_detect(detection.start)(debug=self.__session['debug']):
             self.__controller.press_buttons([Controller.Button.DPAD_DOWN])
             sleep(0.5)
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        sleep(2)
         # while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
         #     self.__controller.press_buttons([Controller.Button.A])
         #     sleep(0.5)
@@ -344,11 +347,14 @@ class TableTurfManager:
         while not self.__multi_detect(detection.level)(debug=self.__session['debug']):
             self.__controller.press_buttons([Controller.Button.A])
             sleep(2)
+        self.__controller.press_buttons([Controller.Button.DPAD_RIGHT])
+        self.__controller.press_buttons([Controller.Button.DPAD_RIGHT])
         while not self.__multi_detect(detection.start)(debug=self.__session['debug']):
             self.__controller.press_buttons([Controller.Button.DPAD_DOWN])
             sleep(0.5)
         self.__controller.press_buttons([Controller.Button.A])
         self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        sleep(2)
         # while self.__multi_detect(detection.deck_cursor)(debug=self.__session['debug']) == -1:
         #     self.__controller.press_buttons([Controller.Button.A])
         #     sleep(0.5)
