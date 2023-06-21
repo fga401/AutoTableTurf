@@ -6,53 +6,6 @@ import numpy as np
 from tableturf.model import Card, Stage, Step, Status
 
 
-class RoundConfig:
-    def __init__(self, _12, _11, _10, _09, _08, _07, _06, _05, _04, _03, _02, _01):
-        self._12 = _12
-        self._11 = _11
-        self._10 = _10
-        self._09 = _09
-        self._08 = _08
-        self._07 = _07
-        self._06 = _06
-        self._05 = _05
-        self._04 = _04
-        self._03 = _03
-        self._02 = _02
-        self._01 = _01
-
-    def get(self, idx: int):
-        if idx == 12:
-            return self._12
-        elif idx == 11:
-            return self._11
-        elif idx == 10:
-            return self._10
-        elif idx == 9:
-            return self._09
-        elif idx == 8:
-            return self._08
-        elif idx == 7:
-            return self._07
-        elif idx == 6:
-            return self._06
-        elif idx == 5:
-            return self._05
-        elif idx == 4:
-            return self._04
-        elif idx == 3:
-            return self._03
-        elif idx == 2:
-            return self._02
-        elif idx == 1:
-            return self._01
-        else:
-            return None
-
-    def __getitem__(self, idx: int):
-        return self.get(idx)
-
-
 def is_special_card(card: Card) -> bool:
     return card.size == 12 and card.sp_cost == 3
 

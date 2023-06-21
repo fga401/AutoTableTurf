@@ -142,10 +142,11 @@ class TableTurfManager:
                 self.__controller.macro(macro)
             else:
                 sleep(0.5)
-        deck = self.__multi_detect(detection.deck)(debug=self.__session['debug'])
-        self.__session['my_deck'] = deck
-        self.__controller.press_buttons([Controller.Button.A])
-        self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
+        if current == target:  # only detect deck if deck is found
+            deck = self.__multi_detect(detection.deck)(debug=self.__session['debug'])
+            self.__session['my_deck'] = deck
+            self.__controller.press_buttons([Controller.Button.A])
+            self.__controller.press_buttons([Controller.Button.A])  # in case command is lost
 
     def __redraw(self):
         while self.__multi_detect(detection.redraw_cursor)(debug=self.__session['debug']) == -1:
