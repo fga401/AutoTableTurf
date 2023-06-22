@@ -1,6 +1,6 @@
 # AutoTableTurf
 
-Automate the Tableturf game helping you reach Level 50 and get all sleeves. The script is based on image recognition and bluetooth emulator to auto play Tableturf.
+Automate the Tableturf game helping you reach Level 999 and get all sleeves. The script is based on image recognition and bluetooth emulator to auto play Tableturf.
 
 ![image](https://user-images.githubusercontent.com/36651740/194977551-2014cff7-5fe4-4964-aad9-7a467aba9aef.png)
 
@@ -14,6 +14,7 @@ Automate the Tableturf game helping you reach Level 50 and get all sleeves. The 
 
 prerequisite:
 
+- Python >= 3.9.0
 - Bluetooth adapter. Tested on Raspberry 4B.
 - Capture card. Tested on Razer Ripsaw HD.
 
@@ -83,6 +84,9 @@ Each block represents the configuration of an NPC. The above profile performs th
 - [x] Screen recognition & Game flow testing
 - [x] Smarter AI
 - [x] User-friendly interface
+
+## Known issues
+1. don't use Deck 11, which is prone to crash. [#4](https://github.com/fga401/AutoTableTurf/issues/4)
 
 ## Credits
 
