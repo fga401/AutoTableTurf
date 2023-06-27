@@ -15,7 +15,9 @@ Automate the Tableturf game helping you reach Level 999 and get all sleeves. The
 prerequisite:
 
 - Python >= 3.9.0
-- Bluetooth adapter. Tested on Raspberry 4B.
+- Bluetooth adapter. Tested on
+  - Windows Subsystem for Linux with a motherboard built-in bluetooth device.
+  - Raspberry 4B.
 - Capture card. Tested on Razer Ripsaw HD.
 
 > Note: all parameters about image recognition are based on Razer Ripsaw HD. It may need to finetune for other devices.
@@ -92,4 +94,4 @@ Each block represents the configuration of an NPC. The above profile performs th
 
 Many thanks to all below repositories:
 
-- https://github.com/Brikwerk/nxbt for implementing a Python API.
+- https://github.com/Brikwerk/nxbt for implementing a Python API of Switch controller.
