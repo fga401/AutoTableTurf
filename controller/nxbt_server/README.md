@@ -61,10 +61,6 @@ sudo service bluetooth start
 Install requirements and start server.
 
 ```bash
-sudo apt install bluez*
-sudo apt install build-essential libdbus-glib-1-dev libgirepository1.0-dev
-sudo apt install python3-dev
-sudo apt install pkg-config
 sudo pip3 install -r requirement.txt
 sudo python3 -m flask run --host=0.0.0.0
 ```
