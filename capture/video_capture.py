@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+import utils.retry
 from capture.interface import Capture
 from logger import logger
 
@@ -43,6 +44,7 @@ class VideoCapture(Capture):
         img = self.capture()
         cv2.imwrite(name + '.jpg', img)
 
+    @utils.retry.retry_with_backoff()
     def capture(self) -> np.ndarray:
         ret, frame = self.__cam.read()
         if not ret:
