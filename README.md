@@ -1,3 +1,6 @@
+# NOTICE
+Due to the recent UI update in the game, all detection box positions must be updated before running this project. https://github.com/fga401/AutoTableTurf/issues/9
+
 # AutoTableTurf
 
 Automate the Tableturf game helping you reach Level 999 and get all sleeves. The script is based on image recognition and bluetooth emulator to auto play Tableturf.
